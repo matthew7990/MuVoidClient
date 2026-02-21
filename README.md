@@ -33,14 +33,14 @@ El build compila todo en una sola carpeta **MuVoidClient/** (launcher + cliente 
    start-client.bat
    ```
 
-## Build completo y publicacion
+## Build completo y publicacion (todo manual, desde tu PC)
 
 1. **Compilar todo** (launcher + cliente) en `MuVoidClient/`:
    ```
    build-all.bat
    ```
 
-2. **Publicar en rama client** (para subir a Git):
+2. **Publicar en rama client** (subir el compilado a Git):
    ```
    deploy-client.bat
    git push origin client
