@@ -217,6 +217,9 @@ async function runClientUpdate(silent = false) {
     showRetry(false);
     setUpdating('ACTUALIZANDO...');
     showProgress(true);
+  } else {
+    // Mostrar barra indeterminada para que el usuario vea que no está colgado
+    showProgress(true);
   }
 
   try {

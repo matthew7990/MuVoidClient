@@ -558,8 +558,15 @@ pub fn start_launcher_update() -> Result<(), String> {
 
 /// Actualiza el cliente: copia desde local (desarrollo) o descarga desde GitHub (rama client).
 /// Emite eventos `download-progress` durante la operación.
+/// Ejecuta en spawn_blocking para no bloquear la UI durante la verificación/descarga.
 #[tauri::command]
-pub fn check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
+pub async fn check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || do_check_and_update_client(app))
+        .await
+        .map_err(|_| "Operación interrumpida".to_string())?
+}
+
+fn do_check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
     let _ = APP_HANDLE.set(app.clone());
     log("Iniciando check_and_update_client...");
     // PRIORIDAD: Verificar si el launcher necesita actualizarse primero.
