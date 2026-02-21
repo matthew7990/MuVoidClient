@@ -600,52 +600,48 @@ pub fn check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 /// Copia archivos desde el directorio local según el manifest.
+/// Solo copia lo necesario: si el archivo existe y el SHA256 coincide, lo omite.
 fn apply_manifest_from_local(
     app: &tauri::AppHandle,
     manifest: &VersionManifest,
     source: &Path,
     install_dir: &Path,
 ) -> Result<(), String> {
-    let installed_ver = get_installed_version();
-    let version_ok = installed_ver.as_deref() == Some(manifest.version.as_str());
     let total = manifest.files.len();
     let sep = std::path::MAIN_SEPARATOR_STR;
+    let to_copy: Vec<_> = manifest.files.iter()
+        .filter(|entry| {
+            let dest_path = install_dir.join(entry.path.replace('/', sep));
+            let exists = fs::metadata(&dest_path).is_ok();
+            if !exists { return true; }
+            compute_sha256(&dest_path).as_deref() != Some(entry.sha256.as_str())
+        })
+        .collect();
 
-    for (i, entry) in manifest.files.iter().enumerate() {
+    for (i, entry) in to_copy.iter().enumerate() {
         let src_path = source.join(entry.path.replace('/', sep));
         let dest_path = install_dir.join(entry.path.replace('/', sep));
 
-        let need_copy = if version_ok {
-            fs::metadata(&dest_path)
-                .ok()
-                .and_then(|_| compute_sha256(&dest_path))
-                .as_deref() != Some(entry.sha256.as_str())
-        } else {
-            true
-        };
-
-        if need_copy {
-            let _ = app.emit("download-progress", DownloadProgress {
-                current: i,
-                total,
-                file: entry.path.clone(),
-                bytes_downloaded: 0,
-                total_bytes: 0,
-                speed_mbps: 0.0,
-                eta_seconds: 0,
-            });
-            if !src_path.exists() {
-                return Err(format!("Archivo no encontrado: {}", src_path.display()));
-            }
-            if let Some(parent) = dest_path.parent() {
-                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-            }
-            fs::copy(&src_path, &dest_path)
-                .map_err(|e| format!("Error copiando {}: {}", entry.path, e))?;
+        let _ = app.emit("download-progress", DownloadProgress {
+            current: i,
+            total: to_copy.len(),
+            file: entry.path.clone(),
+            bytes_downloaded: 0,
+            total_bytes: 0,
+            speed_mbps: 0.0,
+            eta_seconds: 0,
+        });
+        if !src_path.exists() {
+            return Err(format!("Archivo no encontrado: {}", src_path.display()));
         }
+        if let Some(parent) = dest_path.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        fs::copy(&src_path, &dest_path)
+            .map_err(|e| format!("Error copiando {}: {}", entry.path, e))?;
         let _ = app.emit("download-progress", DownloadProgress {
             current: i + 1,
-            total,
+            total: to_copy.len(),
             file: entry.path.clone(),
             bytes_downloaded: 0,
             total_bytes: 0,
@@ -653,37 +649,37 @@ fn apply_manifest_from_local(
             eta_seconds: 0,
         });
     }
+    if to_copy.is_empty() {
+        log("Cliente ya actualizado, no hay archivos que copiar.");
+    } else {
+        log(&format!("Copiados {} archivos (de {} en el manifest)", to_copy.len(), total));
+    }
     Ok(())
 }
 
 /// Descarga archivos desde GitHub según el manifest.
+/// Solo descarga lo necesario: si el archivo existe y el SHA256 coincide, lo omite.
 fn apply_manifest_from_github(
     app: &tauri::AppHandle,
     manifest: &VersionManifest,
     install_dir: &Path,
 ) -> Result<(), String> {
     let base = client_base_url();
-    let installed_ver = get_installed_version();
-    let version_ok = installed_ver.as_deref() == Some(manifest.version.as_str());
     let sep = std::path::MAIN_SEPARATOR_STR;
 
-    // Calcular archivos a descargar en paralelo para evitar congelar el hilo principal
+    // Solo descargar archivos que no existen o cuyo hash no coincide
     let files_to_download: Vec<_> = manifest.files.par_iter().filter(|entry| {
         let dest_path = install_dir.join(entry.path.replace('/', sep));
-        
         let exists = fs::metadata(&dest_path).is_ok();
         if !exists { return true; }
-
-        if version_ok {
-            compute_sha256(&dest_path).as_deref() != Some(entry.sha256.as_str())
-        } else {
-            true
-        }
+        compute_sha256(&dest_path).as_deref() != Some(entry.sha256.as_str())
     }).collect();
 
     if files_to_download.is_empty() {
+        log("Cliente ya actualizado, no hay archivos que descargar.");
         return Ok(());
     }
+    log(&format!("Descargando {} archivos (de {} en el manifest)", files_to_download.len(), manifest.files.len()));
 
     let total_files = files_to_download.len();
     let total_bytes: u64 = files_to_download.iter().map(|f| f.size).sum();

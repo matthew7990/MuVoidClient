@@ -1,10 +1,11 @@
-# Compila solo el launcher y lo publica en MuVoidClient-Release.
+# Compila launcher y publica en MuVoidClient-Release (launcher + cliente).
 # Uso: .\deploy-launcher.ps1
-# No compila el cliente (usa el que ya está).
+# Requiere: compile-client.bat ejecutado antes para tener el cliente en MuVoidClient-Release.
 
 $ErrorActionPreference = "Stop"
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $releaseDir = Join-Path (Split-Path $repoRoot -Parent) "MuVoidClient-Release"
+$clientInRelease = Join-Path $releaseDir "MuVoidClient"
 
 if (-not (Test-Path $releaseDir)) {
     Write-Host "ERROR: No existe $releaseDir" -ForegroundColor Red
@@ -15,10 +16,22 @@ if (-not (Test-Path $releaseDir)) {
 Push-Location $repoRoot
 
 try {
-    Write-Host "`n=== MuVoid - Deploy Launcher (solo launcher) ===" -ForegroundColor Cyan
+    Write-Host "`n=== MuVoid - Deploy a Release (launcher + cliente) ===" -ForegroundColor Cyan
+
+    # 0. Sincronizar cliente si .client-build-dir existe (compile-client ya corrió)
+    $buildDirFile = Join-Path $repoRoot ".client-build-dir"
+    if (Test-Path $buildDirFile) {
+        $clientBuildDir = (Get-Content $buildDirFile -Raw).Trim()
+        if (Test-Path $clientBuildDir) {
+            Write-Host "[0/5] Sincronizando cliente a MuVoidClient-Release..." -ForegroundColor Gray
+            if (-not (Test-Path $clientInRelease)) { New-Item -ItemType Directory -Path $clientInRelease -Force | Out-Null }
+            robocopy $clientBuildDir $clientInRelease /E /XO /NJH /NJS /NDL /NC /NS /NP | Out-Null
+            Write-Host "[OK] Cliente sincronizado (incluye Data/Object42/Object28.bmd, etc.)" -ForegroundColor Green
+        }
+    }
 
     # 1. Compilar launcher (forzar target en proyecto para que el exe quede en launcher/src-tauri/target/release)
-    Write-Host "[1/4] Compilando launcher..." -ForegroundColor Gray
+    Write-Host "[1/5] Compilando launcher..." -ForegroundColor Gray
     $launcherTargetDir = Join-Path $repoRoot "launcher\src-tauri\target"
     $env:CARGO_TARGET_DIR = $launcherTargetDir
     Push-Location (Join-Path $repoRoot "launcher")
@@ -54,7 +67,7 @@ try {
     if ($changelog.Count -eq 0) { $changelog = @("Actualizacion del launcher") }
 
     # 3. Copiar exe a MuVoidClient-Release y generar launcher_version.json
-    Write-Host "[2/4] Copiando a MuVoidClient-Release..." -ForegroundColor Gray
+    Write-Host "[2/5] Copiando launcher a MuVoidClient-Release..." -ForegroundColor Gray
     $exeName = "MuVoid Launcher.exe"
     $destExe = Join-Path $releaseDir $exeName
     Copy-Item $exeFile.FullName $destExe -Force
@@ -83,7 +96,7 @@ try {
     Write-Host "[OK] Launcher $version copiado a MuVoidClient-Release" -ForegroundColor Green
 
     # 4. Git en MuVoidClient (source)
-    Write-Host "[3/4] Commit en MuVoidClient..." -ForegroundColor Gray
+    Write-Host "[3/5] Commit en MuVoidClient..." -ForegroundColor Gray
     git add launcher/index.html launcher/src/main.js launcher/src-tauri/src/http_updater.rs
     git add scripts/deploy-launcher.ps1 scripts/deploy-launcher.bat
     git diff --cached --quiet 2>$null
@@ -94,11 +107,15 @@ try {
         Write-Host "[!] Sin cambios en MuVoidClient" -ForegroundColor Yellow
     }
 
-    # 5. Git en MuVoidClient-Release
-    Write-Host "[4/4] Commit en MuVoidClient-Release..." -ForegroundColor Gray
+    # 5. Git en MuVoidClient-Release (launcher + cliente completo con -f para ignorar .gitignore)
+    Write-Host "[5/5] Commit en MuVoidClient-Release..." -ForegroundColor Gray
     Push-Location $releaseDir
     try {
         git add launcher_version.json $exeName 2>$null
+        if (Test-Path "MuVoidClient") {
+            git add -f MuVoidClient 2>$null
+            Write-Host "[*] Incluyendo carpeta MuVoidClient (Main.exe, Data, version.json, etc.)" -ForegroundColor Gray
+        }
         git status --short
         git diff --cached --quiet 2>$null
         if ($LASTEXITCODE -ne 0) {
