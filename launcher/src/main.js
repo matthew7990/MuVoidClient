@@ -5,32 +5,30 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 // ── Window controls ───────────────────────────────────────────────────────────
 const appWindow = getCurrentWindow();
 document.getElementById('btn-minimize').onclick = () => appWindow.minimize();
-document.getElementById('btn-close').onclick    = () => appWindow.close();
+document.getElementById('btn-close').onclick = () => appWindow.close();
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
-const launcherBanner   = document.getElementById('launcher-banner');
-const launcherBannerMsg = document.getElementById('launcher-banner-msg');
-const launcherUpdateBtn = document.getElementById('launcher-update-btn');
+const serverDot = document.getElementById('server-dot');
+const serverLabel = document.getElementById('server-label');
+const playerCount = document.getElementById('player-count');
 
-const serverDot    = document.getElementById('server-dot');
-const serverLabel  = document.getElementById('server-label');
-const playerCount  = document.getElementById('player-count');
-
-const newsItems    = document.getElementById('news-items');
-const versionTag   = document.getElementById('version-tag');
+const newsItems = document.getElementById('news-items');
+const versionTag = document.getElementById('version-tag');
 
 const clientPathEl = document.getElementById('client-path');
+const selectFolderBtn = document.getElementById('select-folder-btn');
 const openFolderBtn = document.getElementById('open-folder-btn');
 
 const progressWrap = document.getElementById('progress-wrap');
 const progressFill = document.getElementById('progress-fill');
 
-const statusMsg    = document.getElementById('status-msg');
-const retryBtn     = document.getElementById('retry-btn');
-const playBtn      = document.getElementById('play-btn');
+const statusMsg = document.getElementById('status-msg');
+const retryBtn = document.getElementById('retry-btn');
+const playBtn = document.getElementById('play-btn');
+const logConsole = document.getElementById('log-console');
 
-const discordBtn   = document.getElementById('discord-btn');
-const webBtn       = document.getElementById('web-btn');
+const discordBtn = document.getElementById('discord-btn');
+const webBtn = document.getElementById('web-btn');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(text, type = 'info') {
@@ -58,10 +56,17 @@ function hideProgress() {
   progressFill.style.width = '0%';
 }
 
-function setPlaying(enabled) {
-  playBtn.disabled = !enabled;
+function addLog(msg) {
+  const time = new Date().toLocaleTimeString();
+  const line = `[${time}] ${msg}\n`;
+  logConsole.innerText += line;
+  logConsole.scrollTop = logConsole.scrollHeight;
+}
+
+function setPlaying(label = 'JUGAR') {
+  playBtn.disabled = false;
   playBtn.classList.remove('updating');
-  playBtn.textContent = 'JUGAR';
+  playBtn.textContent = label;
 }
 function setUpdating(label = 'ACTUALIZANDO...') {
   playBtn.disabled = true;
@@ -113,10 +118,10 @@ function escapeHtml(str) {
 async function refreshServerStatus() {
   try {
     const online = await invoke('check_server_online');
-    serverDot.className   = 'dot ' + (online ? 'online' : 'offline');
+    serverDot.className = 'dot ' + (online ? 'online' : 'offline');
     serverLabel.textContent = online ? 'Servidor Online' : 'Servidor Offline';
   } catch {
-    serverDot.className   = 'dot offline';
+    serverDot.className = 'dot offline';
     serverLabel.textContent = 'Sin conexión';
   }
 }
@@ -133,6 +138,30 @@ async function loadClientPath() {
 
 // ── Main init ─────────────────────────────────────────────────────────────────
 async function init() {
+  // Listen to download progress events from Rust
+  await listen('download-progress', (event) => {
+    const { current, total, file, bytes_downloaded, total_bytes, speed_mbps, eta_seconds } = event.payload;
+    if (total > 0) {
+      showProgress(false, Math.round((current / total) * 100));
+    }
+
+    let msg = 'Actualizando: ' + file;
+    if (speed_mbps > 0) {
+      const mb = (bytes_downloaded / 1024 / 1024).toFixed(1);
+      const totalMb = (total_bytes / 1024 / 1024).toFixed(1);
+      msg = `Descargando: ${mb}MB / ${totalMb}MB (${speed_mbps.toFixed(1)} MB/s) - ETA: ${eta_seconds}s`;
+    }
+    setStatus(msg, 'info');
+  });
+
+  // Listen for logs from Rust (SETUP FIRST)
+  await listen('launcher-log', (event) => {
+    if (logConsole.innerText === 'Esperando órdenes...') logConsole.innerText = '';
+    addLog(event.payload);
+  });
+
+  addLog('Iniciando Launcher...');
+
   // Load client install path
   await loadClientPath();
 
@@ -141,96 +170,125 @@ async function init() {
   // Refresh every 60 s
   setInterval(refreshServerStatus, 60_000);
 
-  // Check launcher self-update
+  // Check launcher self-update (MANDATORY)
   try {
     const hasUpdate = await invoke('check_launcher_update');
     if (hasUpdate) {
-      launcherBanner.classList.add('visible');
-      launcherBannerMsg.textContent = 'Una nueva versión del launcher está disponible.';
+      setStatus('Actualizando Launcher...', 'info');
+      setUpdating('ACTUALIZANDO LAUNCHER...');
+      // Iniciar descarga del launcher automáticamente
+      await invoke('start_launcher_update');
+      return; // El launcher se cerrará solo
     }
   } catch (e) {
     console.warn('check_launcher_update:', e);
   }
 
   // Fetch client info (changelog)
+  let manifestVersion = null;
   try {
     const info = await invoke('get_client_info');
+    manifestVersion = info.version;
     renderChangelog(info.changelog, info.version);
   } catch (e) {
     renderChangelog([], null);
-    setStatus('Cliente compilado no detectado: ' + (e?.message ?? e), 'error');
-    showRetry(true);
+    setStatus('Error al obtener info: ' + (e?.message ?? e), 'error');
   }
 
-  // Listen to download progress events from Rust
-  await listen('download-progress', (event) => {
-    const { current, total, file } = event.payload;
-    if (total > 0) {
-      showProgress(false, Math.round((current / total) * 100));
-    }
-    if (file) {
-      setStatus('Descargando: ' + file, 'info');
-    }
-  });
-
-  // Try to update client files
-  await runClientUpdate();
+  // Update button label based on installation status
+  const installed = await invoke('is_client_installed');
+  if (!installed) {
+    setPlaying('INICIAR DESCARGA');
+  } else {
+    // Verificar si hay update pendiente
+    setPlaying('VERIFICANDO...');
+    addLog('Comprobando actualizaciones del cliente...');
+    await runClientUpdate(true); // silent check
+  }
 }
 
-async function runClientUpdate() {
-  clearStatus();
-  showRetry(false);
-  setUpdating('VERIFICANDO...');
-  showProgress(true);
+async function runClientUpdate(silent = false) {
+  if (!silent) {
+    clearStatus();
+    showRetry(false);
+    setUpdating('ACTUALIZANDO...');
+    showProgress(true);
+  }
 
   try {
     await invoke('check_and_update_client');
     hideProgress();
     clearStatus();
-    setPlaying(true);
+    setPlaying('JUGAR');
   } catch (e) {
     hideProgress();
-    setStatus('Error al verificar cliente: ' + (e?.message ?? e), 'error');
-    showRetry(true);
-    setPlaying(false);
-    playBtn.disabled = true;
-    playBtn.classList.remove('updating');
-    playBtn.textContent = 'JUGAR';
+    if (e === "LAUNCHER_UPDATE_REQUIRED") {
+      setStatus('Actualizando Launcher...', 'info');
+      await invoke('start_launcher_update');
+      return;
+    }
+    if (!silent) {
+      setStatus('Error: ' + (e?.message ?? e), 'error');
+      showRetry(true);
+      setPlaying('REINTENTAR');
+    } else {
+      const installed = await invoke('is_client_installed');
+      setPlaying(installed ? 'JUGAR' : 'INICIAR DESCARGA');
+    }
   }
 }
 
 // ── Button handlers ───────────────────────────────────────────────────────────
 playBtn.onclick = async () => {
+  const text = playBtn.textContent;
+  if (text === 'INICIAR DESCARGA' || text === 'ACTUALIZAR' || text === 'REINTENTAR') {
+    // Si es la primera descarga, preguntar dónde guardar
+    if (text === 'INICIAR DESCARGA') {
+      const path = await invoke('select_install_directory');
+      if (!path) return; // Usuario canceló
+      clientPathEl.value = path;
+    }
+    runClientUpdate();
+    return;
+  }
+
   try {
     await invoke('launch_game');
   } catch (e) {
-    setStatus('Error al iniciar el juego: ' + (e?.message ?? e), 'error');
+    setStatus('Error al iniciar: ' + (e?.message ?? e), 'error');
   }
 };
 
 retryBtn.onclick = () => runClientUpdate();
+
+selectFolderBtn.onclick = async () => {
+  try {
+    const path = await invoke('select_install_directory');
+    if (path) {
+      clientPathEl.value = path;
+      addLog('Carpeta de instalación cambiada a: ' + path);
+    }
+  } catch (e) {
+    setStatus('Error al seleccionar carpeta: ' + (e?.message ?? e), 'error');
+  }
+};
 
 openFolderBtn.onclick = async () => {
   try { await invoke('open_client_folder'); } catch { /* ignore */ }
 };
 
 discordBtn.onclick = () =>
-  invoke('open_url', { url: 'https://discord.gg/muvoid' }).catch(() => {});
+  invoke('open_url', { url: 'https://discord.gg/muvoid' }).catch(() => { });
 
 webBtn.onclick = () =>
-  invoke('open_url', { url: 'https://muvoid.com' }).catch(() => {});
+  invoke('open_url', { url: 'https://muvoid.com' }).catch(() => { });
 
-launcherUpdateBtn.onclick = async () => {
-  launcherUpdateBtn.disabled = true;
-  launcherUpdateBtn.textContent = 'ACTUALIZANDO...';
-  try {
-    await invoke('start_launcher_update');
-  } catch (e) {
-    setStatus('Error al actualizar launcher: ' + (e?.message ?? e), 'error');
-    launcherUpdateBtn.disabled = false;
-    launcherUpdateBtn.textContent = 'ACTUALIZAR';
-  }
-};
+const clearLogsBtn = document.getElementById('clear-logs-btn');
+if (clearLogsBtn) {
+  clearLogsBtn.onclick = () => {
+    logConsole.innerText = '';
+  };
+}
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 init();

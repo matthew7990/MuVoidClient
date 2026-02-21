@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MuVoid Launcher</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
@@ -31,6 +36,7 @@
       padding: 0 0 0 14px;
       flex-shrink: 0;
     }
+
     #titlebar-drag {
       flex: 1;
       display: flex;
@@ -39,12 +45,17 @@
       height: 100%;
       cursor: grab;
     }
-    #titlebar-drag:active { cursor: grabbing; }
+
+    #titlebar-drag:active {
+      cursor: grabbing;
+    }
+
     .tb-icon {
       width: 14px;
       height: 14px;
       opacity: 0.7;
     }
+
     #titlebar-title {
       font-size: 11px;
       font-weight: 600;
@@ -66,9 +77,20 @@
       transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .win-btn:hover { background: #1e1d32; color: #ccc8ff; }
-    #btn-close:hover { background: #c0392b; color: #fff; }
-    .win-btn svg { pointer-events: none; }
+
+    .win-btn:hover {
+      background: #1e1d32;
+      color: #ccc8ff;
+    }
+
+    #btn-close:hover {
+      background: #c0392b;
+      color: #fff;
+    }
+
+    .win-btn svg {
+      pointer-events: none;
+    }
 
     /* ── Launcher update banner ── */
     #launcher-banner {
@@ -81,8 +103,15 @@
       font-size: 12px;
       flex-shrink: 0;
     }
-    #launcher-banner.visible { display: flex; }
-    #launcher-banner strong { color: #aa88ff; }
+
+    #launcher-banner.visible {
+      display: flex;
+    }
+
+    #launcher-banner strong {
+      color: #aa88ff;
+    }
+
     #launcher-update-btn {
       margin-left: auto;
       background: #6655bb;
@@ -96,7 +125,10 @@
       cursor: pointer;
       transition: background 0.15s;
     }
-    #launcher-update-btn:hover { background: #7766cc; }
+
+    #launcher-update-btn:hover {
+      background: #7766cc;
+    }
 
     /* ── Main layout ── */
     .layout {
@@ -124,15 +156,23 @@
       height: 86px;
       position: relative;
     }
-    .logo-hex-wrap svg { width: 100%; height: 100%; }
 
-    .logo-text { text-align: center; }
+    .logo-hex-wrap svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .logo-text {
+      text-align: center;
+    }
+
     .logo-name {
       font-size: 20px;
       font-weight: 700;
       letter-spacing: 6px;
       color: #e8e0ff;
     }
+
     .logo-season {
       font-size: 9px;
       letter-spacing: 2.5px;
@@ -155,6 +195,7 @@
       border-radius: 8px;
       padding: 10px 13px;
     }
+
     .server-row {
       display: flex;
       align-items: center;
@@ -163,6 +204,7 @@
       font-weight: 600;
       color: #d8d4f5;
     }
+
     .dot {
       width: 8px;
       height: 8px;
@@ -171,8 +213,17 @@
       flex-shrink: 0;
       transition: background 0.4s, box-shadow 0.4s;
     }
-    .dot.online  { background: #4cff7e; box-shadow: 0 0 7px #4cff7e99; }
-    .dot.offline { background: #ff5555; box-shadow: 0 0 7px #ff555599; }
+
+    .dot.online {
+      background: #4cff7e;
+      box-shadow: 0 0 7px #4cff7e99;
+    }
+
+    .dot.offline {
+      background: #ff5555;
+      box-shadow: 0 0 7px #ff555599;
+    }
+
     .player-count {
       font-size: 11px;
       color: #49466e;
@@ -180,7 +231,9 @@
       padding-left: 15px;
     }
 
-    .spacer { flex: 1; }
+    .spacer {
+      flex: 1;
+    }
 
     /* Social buttons */
     .social-btn {
@@ -198,12 +251,16 @@
       gap: 8px;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
+
     .social-btn:hover {
       background: #242340;
       color: #ccc8ff;
       border-color: #3a3870;
     }
-    .social-btn svg { flex-shrink: 0; }
+
+    .social-btn svg {
+      flex-shrink: 0;
+    }
 
     /* ══════════════════ RIGHT PANEL ══════════════════ */
     .right {
@@ -229,9 +286,19 @@
       overflow-y: auto;
       min-height: 0;
     }
-    .news-list::-webkit-scrollbar { width: 3px; }
-    .news-list::-webkit-scrollbar-track { background: transparent; }
-    .news-list::-webkit-scrollbar-thumb { background: #22213a; border-radius: 2px; }
+
+    .news-list::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .news-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .news-list::-webkit-scrollbar-thumb {
+      background: #22213a;
+      border-radius: 2px;
+    }
 
     .news-item {
       display: flex;
@@ -243,9 +310,23 @@
       border-radius: 0 7px 7px 0;
       margin-bottom: 7px;
     }
-    .news-item .news-text { font-size: 13px; line-height: 1.5; color: #b8b4d8; }
-    .news-item .news-text strong { display: block; color: #e8e0ff; font-size: 13px; }
-    .news-item .news-text span  { font-size: 12px; color: #5a578a; }
+
+    .news-item .news-text {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #b8b4d8;
+    }
+
+    .news-item .news-text strong {
+      display: block;
+      color: #e8e0ff;
+      font-size: 13px;
+    }
+
+    .news-item .news-text span {
+      font-size: 12px;
+      color: #5a578a;
+    }
 
     /* Version tag in news header */
     .version-tag {
@@ -259,6 +340,47 @@
       border-radius: 10px;
       margin-left: 10px;
       vertical-align: middle;
+    }
+
+    /* Debug Console */
+    .console-wrap {
+      height: 100px;
+      background: #0c0b13;
+      border: 1px solid #1e1d30;
+      border-radius: 7px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .console-header {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #49466e;
+      padding: 4px 8px;
+      background: #13121f;
+      border-bottom: 1px solid #1e1d30;
+      text-transform: uppercase;
+    }
+
+    #log-console {
+      flex: 1;
+      padding: 6px 8px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 10px;
+      color: #7b78a8;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.4;
+    }
+
+    #log-console::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    #log-console::-webkit-scrollbar-thumb {
+      background: #22213a;
     }
 
     /* Bottom controls */
@@ -278,7 +400,12 @@
       border-radius: 7px;
       padding: 7px 10px;
     }
-    .path-row svg { flex-shrink: 0; color: #5544aa; }
+
+    .path-row svg {
+      flex-shrink: 0;
+      color: #5544aa;
+    }
+
     .path-row input {
       flex: 1;
       background: none;
@@ -289,6 +416,7 @@
       font-family: 'Consolas', 'Courier New', monospace;
       min-width: 0;
     }
+
     .path-row button {
       background: none;
       border: none;
@@ -300,7 +428,10 @@
       display: flex;
       align-items: center;
     }
-    .path-row button:hover { opacity: 1; }
+
+    .path-row button:hover {
+      opacity: 1;
+    }
 
     /* Progress bar */
     #progress-wrap {
@@ -310,20 +441,31 @@
       overflow: hidden;
       display: none;
     }
-    #progress-wrap.visible { display: block; }
+
+    #progress-wrap.visible {
+      display: block;
+    }
+
     #progress-fill {
       height: 100%;
       background: linear-gradient(90deg, #5544aa, #9966ee);
       width: 0%;
       transition: width 0.2s;
     }
+
     #progress-fill.indeterminate {
       width: 40%;
       animation: indeterminate 1.4s ease-in-out infinite;
     }
+
     @keyframes indeterminate {
-      0%   { transform: translateX(-200%); }
-      100% { transform: translateX(400%); }
+      0% {
+        transform: translateX(-200%);
+      }
+
+      100% {
+        transform: translateX(400%);
+      }
     }
 
     /* Status message */
@@ -336,18 +478,21 @@
       align-items: flex-start;
       line-height: 1.5;
     }
+
     #status-msg.error {
       display: flex;
       background: #28100f;
       border: 1px solid #4a1a1a;
       color: #ff8080;
     }
+
     #status-msg.info {
       display: flex;
       background: #0f1428;
       border: 1px solid #1a2a50;
       color: #88aaff;
     }
+
     #status-msg.success {
       display: flex;
       background: #0f2218;
@@ -375,8 +520,15 @@
       transition: background 0.15s, color 0.15s;
       display: none;
     }
-    #retry-btn.visible { display: block; }
-    #retry-btn:hover { background: #242340; color: #ccc8ff; }
+
+    #retry-btn.visible {
+      display: block;
+    }
+
+    #retry-btn:hover {
+      background: #242340;
+      color: #ccc8ff;
+    }
 
     #play-btn {
       flex: 1;
@@ -393,15 +545,18 @@
       transition: all 0.15s;
       box-shadow: 0 4px 20px #6644cc44;
     }
+
     #play-btn:hover:not(:disabled) {
       background: linear-gradient(135deg, #7755dd, #aa55ff);
       box-shadow: 0 4px 28px #6644cc77;
     }
+
     #play-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
       box-shadow: none;
     }
+
     #play-btn.updating {
       background: linear-gradient(135deg, #2a2a4a, #3a3a60);
       letter-spacing: 2px;
@@ -410,37 +565,33 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Custom titlebar -->
   <div id="titlebar">
     <div id="titlebar-drag" data-tauri-drag-region>
       <svg class="tb-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="50,4 93,28 93,72 50,96 7,72 7,28" fill="none" stroke="#5544aa" stroke-width="8"/>
-        <text x="50" y="62" text-anchor="middle" font-family="'Segoe UI',sans-serif"
-              font-weight="700" font-size="38" fill="#9977ee">MV</text>
+        <polygon points="50,4 93,28 93,72 50,96 7,72 7,28" fill="none" stroke="#5544aa" stroke-width="8" />
+        <text x="50" y="62" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-weight="700" font-size="38"
+          fill="#9977ee">MV</text>
       </svg>
       <span id="titlebar-title">MUVOID LAUNCHER</span>
     </div>
     <button class="win-btn" id="btn-minimize" title="Minimizar">
       <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor">
-        <rect x="0" y="5" width="11" height="1.5" rx="0.5"/>
+        <rect x="0" y="5" width="11" height="1.5" rx="0.5" />
       </svg>
     </button>
     <button class="win-btn" id="btn-close" title="Cerrar">
-      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-        <line x1="1" y1="1" x2="10" y2="10"/>
-        <line x1="10" y1="1" x2="1" y2="10"/>
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5"
+        stroke-linecap="round">
+        <line x1="1" y1="1" x2="10" y2="10" />
+        <line x1="10" y1="1" x2="1" y2="10" />
       </svg>
     </button>
   </div>
 
-  <!-- Launcher update banner -->
-  <div id="launcher-banner">
-    <strong>Nueva versión del launcher disponible</strong>
-    <span id="launcher-banner-msg"></span>
-    <button id="launcher-update-btn">ACTUALIZAR</button>
-  </div>
 
   <div class="layout">
 
@@ -450,13 +601,11 @@
       <!-- Hexagon logo -->
       <div class="logo-hex-wrap">
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="50,4 93,28 93,72 50,96 7,72 7,28"
-                   fill="#0f0e1a" stroke="#5544aa" stroke-width="2"/>
-          <polygon points="50,12 86,32 86,68 50,88 14,68 14,32"
-                   fill="#13121f" stroke="#3a3080" stroke-width="1" opacity="0.6"/>
-          <text x="50" y="58" text-anchor="middle"
-                font-family="'Segoe UI', sans-serif" font-weight="700"
-                font-size="24" fill="#c0a8ff" letter-spacing="1">MV</text>
+          <polygon points="50,4 93,28 93,72 50,96 7,72 7,28" fill="#0f0e1a" stroke="#5544aa" stroke-width="2" />
+          <polygon points="50,12 86,32 86,68 50,88 14,68 14,32" fill="#13121f" stroke="#3a3080" stroke-width="1"
+            opacity="0.6" />
+          <text x="50" y="58" text-anchor="middle" font-family="'Segoe UI', sans-serif" font-weight="700" font-size="24"
+            fill="#c0a8ff" letter-spacing="1">MV</text>
         </svg>
       </div>
 
@@ -481,15 +630,16 @@
       <!-- Social -->
       <button class="social-btn" id="discord-btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+          <path
+            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
         </svg>
         Discord
       </button>
       <button class="social-btn" id="web-btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="2" y1="12" x2="22" y2="12"/>
-          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
         Sitio Web
       </button>
@@ -512,19 +662,34 @@
         </div>
       </div>
 
+      <!-- Log Console -->
+      <div class="console-wrap">
+        <div class="console-header">
+          Registro de Actividad
+          <button id="clear-logs-btn"
+            style="float: right; background: none; border: none; color: #49466e; cursor: pointer; font-size: 8px;">LIMPIAR</button>
+        </div>
+        <div id="log-console">Esperando órdenes...</div>
+      </div>
+
       <!-- Bottom controls -->
       <div class="bottom">
 
         <div class="path-row">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5544aa" stroke-width="2">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>
-          <input type="text" id="client-path" readonly title="Directorio del cliente compilado detectado" />
-          <button id="open-folder-btn" title="Abrir carpeta de instalación del cliente">
+          <input type="text" id="client-path" readonly title="Carpeta de instalación del cliente (puedes cambiarla)" />
+          <button id="select-folder-btn" title="Seleccionar carpeta de instalación">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
+              <circle cx="12" cy="12" r="1" /><circle cx="19" cy="12" r="1" /><circle cx="5" cy="12" r="1" />
+            </svg>
+          </button>
+          <button id="open-folder-btn" title="Abrir carpeta en el Explorador">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
             </svg>
           </button>
         </div>
@@ -541,10 +706,11 @@
         </div>
 
       </div>
-    </div>
 
-  </div>
+    </div> <!-- End Right -->
+  </div> <!-- End Layout -->
 
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>
