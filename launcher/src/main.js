@@ -320,13 +320,15 @@ document.getElementById('cfg-volume').oninput = (e) => {
 settingsSaveBtn.onclick = async () => {
   try {
     await invoke('save_game_settings', {
-      window_width: parseInt(document.getElementById('cfg-width').value) || 1024,
-      window_height: parseInt(document.getElementById('cfg-height').value) || 768,
-      windowed: document.getElementById('cfg-windowed').checked,
-      sound_enabled: document.getElementById('cfg-sound').checked,
-      music_enabled: document.getElementById('cfg-music').checked,
-      volume_level: parseInt(document.getElementById('cfg-volume').value) || 5,
-      language: document.getElementById('cfg-language').value || 'SPN',
+      settings: {
+        window_width: parseInt(document.getElementById('cfg-width').value) || 1024,
+        window_height: parseInt(document.getElementById('cfg-height').value) || 768,
+        windowed: document.getElementById('cfg-windowed').checked,
+        sound_enabled: document.getElementById('cfg-sound').checked,
+        music_enabled: document.getElementById('cfg-music').checked,
+        volume_level: parseInt(document.getElementById('cfg-volume').value) || 5,
+        language: document.getElementById('cfg-language').value || 'SPN',
+      },
     });
     addLog('Configuración guardada');
     closeSettings();
