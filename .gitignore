@@ -1,0 +1,13 @@
+# Build output en rama source (en rama client SÍ se commitea con deploy-client)
+MuVoidClient/
+.client-build-dir
+
+# Launcher
+launcher/node_modules/
+launcher/dist/
+launcher/src-tauri/target/
+
+# IDE
+.idea/
+.vscode/
+*.user

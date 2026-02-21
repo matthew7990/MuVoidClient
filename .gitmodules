@@ -1,0 +1,3 @@
+[submodule "MuMain"]
+	path = MuMain
+	url = https://github.com/sven-n/MuMain.git

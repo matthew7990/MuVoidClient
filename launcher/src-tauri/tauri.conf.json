@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MuVoid Launcher",
+  "version": "1.0.0",
+  "identifier": "com.muvoid.launcher",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "MuVoid Launcher",
+        "width": 820,
+        "height": 520,
+        "resizable": false,
+        "decorations": false,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    },
+    "longDescription": "Launcher para MuVoid - descarga el cliente y lanza el juego.",
+    "shortDescription": "MuVoid Launcher",
+    "resources": [],
+    "externalBin": [],
+    "copyright": "",
+    "category": "Game"
+  },
+  "plugins": {}
+}
