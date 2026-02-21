@@ -97,11 +97,14 @@ try {
 
     # 4. Git en MuVoidClient (source)
     Write-Host "[3/5] Commit en MuVoidClient..." -ForegroundColor Gray
+    $clientVer = (Get-Content (Join-Path $repoRoot "CLIENT_VERSION") -Raw -ErrorAction SilentlyContinue).Trim()
     git add launcher/index.html launcher/src/main.js launcher/src-tauri/src/http_updater.rs
     git add scripts/deploy-launcher.ps1 scripts/deploy-launcher.bat
+    git add CLIENT_VERSION scripts/generate-client-manifest.ps1 2>$null
     git diff --cached --quiet 2>$null
     if ($LASTEXITCODE -ne 0) {
-        git commit -m "fix(launcher): carpeta instalacion Program Files, boton seleccionar, sin mensaje compile-client"
+        $msg = if ($clientVer) { "chore: cliente v$clientVer" } else { "chore: actualizacion" }
+        git commit -m $msg
         Write-Host "[OK] Commit en MuVoidClient" -ForegroundColor Green
     } else {
         Write-Host "[!] Sin cambios en MuVoidClient" -ForegroundColor Yellow
@@ -119,7 +122,9 @@ try {
         git status --short
         git diff --cached --quiet 2>$null
         if ($LASTEXITCODE -ne 0) {
-            git commit -m "chore(launcher): v$version - carpeta Program Files, boton seleccionar"
+            $clientVer = (Get-Content (Join-Path $repoRoot "CLIENT_VERSION") -Raw -ErrorAction SilentlyContinue).Trim()
+            $verInfo = if ($clientVer) { "cliente v$clientVer" } else { "launcher v$version" }
+            git commit -m "chore: $verInfo"
             Write-Host "[OK] Commit en MuVoidClient-Release" -ForegroundColor Green
             Write-Host "`nPara publicar: git push origin main (en ambos repos)" -ForegroundColor Cyan
         } else {

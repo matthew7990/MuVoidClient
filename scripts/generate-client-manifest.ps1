@@ -11,14 +11,28 @@ $ErrorActionPreference = "Stop"
 $exeDir  = Split-Path $ExePath -Parent
 $repoRoot = Split-Path $PSScriptRoot -Parent
 
-# ── Versión ──────────────────────────────────────────────────────────────────
+# ── Versión (auto-incrementa build en cada compilación) ──────────────────────
 $versionFile = Join-Path $repoRoot "CLIENT_VERSION"
+$prevVersion = ""
 if (Test-Path $versionFile) {
-    $version = (Get-Content $versionFile -Raw).Trim()
+    $prevVersion = (Get-Content $versionFile -Raw).Trim()
+}
+# Formato: 1.0.0 o 1.0.0.1 → incrementar último segmento numérico
+$parts = $prevVersion -split '\.'
+$lastIdx = $parts.Count - 1
+$build = 1
+if ($lastIdx -ge 0 -and $parts[$lastIdx] -match '^\d+$') {
+    $build = [int]$parts[$lastIdx] + 1
+    $parts[$lastIdx] = $build.ToString()
+    $version = $parts -join '.'
+} elseif ($prevVersion) {
+    $version = $prevVersion + ".1"
 } else {
-    $version = "1.0." + (Get-Date -Format "yyyyMMdd")
-    Set-Content $versionFile $version -Encoding UTF8
-    Write-Host "[*] CLIENT_VERSION creado automaticamente: $version" -ForegroundColor Gray
+    $version = "1.0.0.1"
+}
+[System.IO.File]::WriteAllText($versionFile, $version, (New-Object System.Text.UTF8Encoding $false))
+if ($prevVersion -and $prevVersion -ne $version) {
+    Write-Host "[*] Version: $prevVersion -> $version" -ForegroundColor Cyan
 }
 
 # ── Changelog ────────────────────────────────────────────────────────────────
@@ -40,7 +54,7 @@ $files = @()
 $sha   = [System.Security.Cryptography.SHA256]::Create()
 $baseLen = $exeDir.TrimEnd('\').Length + 1
 
-Get-ChildItem $exeDir -File -Recurse | Where-Object { $_.Name -ne "version.json" } | ForEach-Object {
+Get-ChildItem $exeDir -File -Recurse | Where-Object { $_.Name -ne "version.json" -and $_.Name -ne "config.ini" } | ForEach-Object {
     $relPath = $_.FullName.Substring($baseLen) -replace "\\", "/"
     $bytes   = [System.IO.File]::ReadAllBytes($_.FullName)
     $hash    = [BitConverter]::ToString($sha.ComputeHash($bytes)) -replace '-', ''
@@ -66,7 +80,9 @@ $manifest = [ordered]@{
 }
 
 $outPath = Join-Path $exeDir "version.json"
-$manifest | ConvertTo-Json -Depth 4 | Set-Content $outPath -Encoding UTF8
+$json = $manifest | ConvertTo-Json -Depth 4
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+[System.IO.File]::WriteAllText($outPath, $json, $utf8NoBom)
 
 # Guardar ruta para build-all.bat (directorio exacto donde compilo)
 Set-Content (Join-Path $repoRoot ".client-build-dir") $exeDir -NoNewline
