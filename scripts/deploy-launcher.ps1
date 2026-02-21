@@ -75,7 +75,10 @@ try {
             size = (Get-Item $destExe).Length
         })
     }
-    $manifest | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $releaseDir "launcher_version.json") -Encoding UTF8
+    $json = $manifest | ConvertTo-Json -Depth 4 -Compress
+    # Escribir sin BOM (UTF-8 puro) para que serde_json lo parsee correctamente
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText((Join-Path $releaseDir "launcher_version.json"), $json, $utf8NoBom)
 
     Write-Host "[OK] Launcher $version copiado a MuVoidClient-Release" -ForegroundColor Green
 
