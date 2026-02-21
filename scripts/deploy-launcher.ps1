@@ -32,7 +32,7 @@ try {
 
     # 0b. Si Data99 existe localmente, copiar Interface 99b a Release (no hace falta subir Data99 a git)
     $data99Interface = Join-Path $repoRoot "Data99\Interface"
-    $customInterfaceDest = Join-Path $clientInRelease "Data\Custom\Interface"
+    $customInterfaceDest = Join-Path $clientInRelease "Data\99bInt"
     if ((Test-Path $data99Interface) -and (Test-Path $clientInRelease)) {
         Write-Host "[0b] Copiando Interface 99b (Data99) a Release..." -ForegroundColor Gray
         if (-not (Test-Path $customInterfaceDest)) { New-Item -ItemType Directory -Path $customInterfaceDest -Force | Out-Null }
