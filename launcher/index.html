@@ -563,6 +563,105 @@
       font-size: 12px;
       box-shadow: none;
     }
+
+    /* Settings modal */
+    .settings-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .settings-modal.visible { display: flex; }
+    .settings-modal-content {
+      background: #13121f;
+      border: 1px solid #2a2940;
+      border-radius: 8px;
+      width: 320px;
+      max-width: 90vw;
+    }
+    .settings-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e1d30;
+    }
+    .settings-modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #aa88ff;
+    }
+    .settings-close-btn {
+      background: none;
+      border: none;
+      color: #8880bb;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .settings-close-btn:hover { color: #ccc8ff; }
+    .settings-modal-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #b8b4d8;
+    }
+    .settings-row label { min-width: 100px; }
+    .settings-row input[type="number"] {
+      width: 60px;
+      padding: 4px 6px;
+      background: #0f0e1a;
+      border: 1px solid #1e1d30;
+      border-radius: 4px;
+      color: #ccc;
+      font-size: 12px;
+    }
+    .settings-res { display: flex; align-items: center; gap: 6px; }
+    .settings-row input[type="checkbox"] { accent-color: #6655bb; }
+    .settings-row input[type="range"] {
+      flex: 1;
+      accent-color: #6655bb;
+    }
+    .settings-row select {
+      flex: 1;
+      min-width: 120px;
+      padding: 4px 8px;
+      background: #0f0e1a;
+      border: 1px solid #1e1d30;
+      border-radius: 4px;
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    #cfg-volume-val { min-width: 20px; }
+    .settings-modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #1e1d30;
+    }
+    .settings-save-btn {
+      width: 100%;
+      background: #6655bb;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .settings-save-btn:hover { background: #7766cc; }
   </style>
 </head>
 
@@ -611,7 +710,7 @@
 
       <div class="logo-text">
         <div class="logo-name">MUVOID</div>
-        <div class="logo-season">SEASON 8 · EPISODE 3</div>
+        <div class="logo-season">99C +</div>
       </div>
 
       <div class="sep"></div>
@@ -642,6 +741,13 @@
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
         </svg>
         Sitio Web
+      </button>
+      <button class="social-btn" id="settings-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+        Configuración
       </button>
 
     </div>
@@ -709,6 +815,54 @@
 
     </div> <!-- End Right -->
   </div> <!-- End Layout -->
+
+  <!-- Modal Configuración -->
+  <div id="settings-modal" class="settings-modal">
+    <div class="settings-modal-content">
+      <div class="settings-modal-header">
+        <span class="settings-modal-title">Configuración del juego</span>
+        <button id="settings-close-btn" class="settings-close-btn">×</button>
+      </div>
+      <div class="settings-modal-body">
+        <div class="settings-row">
+          <label>Idioma</label>
+          <select id="cfg-language">
+            <option value="SPN">Español</option>
+            <option value="Eng">English</option>
+            <option value="POR">Português</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label>Resolución</label>
+          <div class="settings-res">
+            <input type="number" id="cfg-width" min="640" max="1920" step="64" />
+            <span>×</span>
+            <input type="number" id="cfg-height" min="480" max="1080" step="64" />
+          </div>
+        </div>
+        <div class="settings-row">
+          <label>Modo ventana</label>
+          <input type="checkbox" id="cfg-windowed" checked />
+        </div>
+        <div class="settings-row">
+          <label>Sonido</label>
+          <input type="checkbox" id="cfg-sound" checked />
+        </div>
+        <div class="settings-row">
+          <label>Música</label>
+          <input type="checkbox" id="cfg-music" />
+        </div>
+        <div class="settings-row">
+          <label>Volumen (0-10)</label>
+          <input type="range" id="cfg-volume" min="0" max="10" value="5" />
+          <span id="cfg-volume-val">5</span>
+        </div>
+      </div>
+      <div class="settings-modal-footer">
+        <button id="settings-save-btn" class="settings-save-btn">Guardar</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="/src/main.js"></script>
 </body>

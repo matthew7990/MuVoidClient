@@ -29,6 +29,10 @@ const logConsole = document.getElementById('log-console');
 
 const discordBtn = document.getElementById('discord-btn');
 const webBtn = document.getElementById('web-btn');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const settingsCloseBtn = document.getElementById('settings-close-btn');
+const settingsSaveBtn = document.getElementById('settings-save-btn');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function setStatus(text, type = 'info') {
@@ -282,6 +286,54 @@ discordBtn.onclick = () =>
 
 webBtn.onclick = () =>
   invoke('open_url', { url: 'https://muvoid.com' }).catch(() => { });
+
+// ── Settings modal ───────────────────────────────────────────────────────────
+async function openSettings() {
+  try {
+    const s = await invoke('get_game_settings');
+    document.getElementById('cfg-language').value = s.language || 'SPN';
+    document.getElementById('cfg-width').value = s.window_width || 1024;
+    document.getElementById('cfg-height').value = s.window_height || 768;
+    document.getElementById('cfg-windowed').checked = s.windowed !== false;
+    document.getElementById('cfg-sound').checked = s.sound_enabled !== false;
+    document.getElementById('cfg-music').checked = s.music_enabled === true;
+    document.getElementById('cfg-volume').value = s.volume_level ?? 5;
+    document.getElementById('cfg-volume-val').textContent = s.volume_level ?? 5;
+  } catch (e) {
+    setStatus('Error al cargar configuración: ' + (e?.message ?? e), 'error');
+  }
+  settingsModal.classList.add('visible');
+}
+
+function closeSettings() {
+  settingsModal.classList.remove('visible');
+}
+
+settingsBtn.onclick = openSettings;
+settingsCloseBtn.onclick = closeSettings;
+settingsModal.onclick = (e) => { if (e.target === settingsModal) closeSettings(); };
+
+document.getElementById('cfg-volume').oninput = (e) => {
+  document.getElementById('cfg-volume-val').textContent = e.target.value;
+};
+
+settingsSaveBtn.onclick = async () => {
+  try {
+    await invoke('save_game_settings', {
+      window_width: parseInt(document.getElementById('cfg-width').value) || 1024,
+      window_height: parseInt(document.getElementById('cfg-height').value) || 768,
+      windowed: document.getElementById('cfg-windowed').checked,
+      sound_enabled: document.getElementById('cfg-sound').checked,
+      music_enabled: document.getElementById('cfg-music').checked,
+      volume_level: parseInt(document.getElementById('cfg-volume').value) || 5,
+      language: document.getElementById('cfg-language').value || 'SPN',
+    });
+    addLog('Configuración guardada');
+    closeSettings();
+  } catch (e) {
+    setStatus('Error al guardar: ' + (e?.message ?? e), 'error');
+  }
+};
 
 const clearLogsBtn = document.getElementById('clear-logs-btn');
 if (clearLogsBtn) {

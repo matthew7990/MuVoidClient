@@ -30,6 +30,36 @@ struct LauncherConfig {
     client_source: Option<String>,
     /// Ruta de instalación personalizada para el cliente.
     install_dir: Option<String>,
+    /// Configuración del juego (resolución, audio, etc.) — NO IP/puerto.
+    #[serde(default)]
+    game: GameSettings,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GameSettings {
+    pub window_width: u32,
+    pub window_height: u32,
+    pub windowed: bool,
+    pub sound_enabled: bool,
+    pub music_enabled: bool,
+    pub volume_level: u32,
+    /// Idioma del juego: Eng, SPN, POR
+    #[serde(default)]
+    pub language: String,
+}
+
+impl Default for GameSettings {
+    fn default() -> Self {
+        Self {
+            window_width: 1024,
+            window_height: 768,
+            windowed: true,
+            sound_enabled: true,
+            music_enabled: false,
+            volume_level: 5,
+            language: "SPN".to_string(),
+        }
+    }
 }
 
 fn config_path() -> PathBuf {
@@ -401,6 +431,47 @@ pub fn select_install_directory() -> Option<String> {
     }
 }
 
+/// Devuelve la configuración del juego (resolución, audio, etc.).
+#[tauri::command]
+pub fn get_game_settings() -> GameSettings {
+    load_config().game
+}
+
+/// Guarda la configuración del juego.
+#[tauri::command]
+pub fn save_game_settings(settings: GameSettings) -> Result<(), String> {
+    let mut config = load_config();
+    config.game = settings;
+    save_config(&config)
+}
+
+/// Escribe game_config.ini en %LOCALAPPDATA%\MuVoid\ para que el cliente lo lea.
+fn write_game_config_ini() -> Result<(), String> {
+    let config = load_config();
+    let g = &config.game;
+    let dir = data_dir();
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join("game_config.ini");
+
+    let lang = if g.language.is_empty() { "SPN" } else { g.language.as_str() };
+    let ini = format!(
+        "[LOGIN]\r\nVersion=1.03.34\r\nTestVersion=1.03.34\r\nRememberMe=0\r\nLanguage={}\r\nEncryptedUsername=\r\nEncryptedPassword=\r\n\
+[PARTITION]\r\nVersion=357\r\n\
+[Window]\r\nWidth={}\r\nHeight={}\r\nWindowed={}\r\n\
+[Graphics]\r\nColorDepth=0\r\nRenderTextType=0\r\n\
+[Audio]\r\nSoundEnabled={}\r\nMusicEnabled={}\r\nVolumeLevel={}\r\n",
+        lang,
+        g.window_width,
+        g.window_height,
+        if g.windowed { "1" } else { "0" },
+        if g.sound_enabled { "1" } else { "0" },
+        if g.music_enabled { "1" } else { "0" },
+        g.volume_level.min(10)
+    );
+
+    fs::write(&path, ini).map_err(|e| e.to_string())
+}
+
 /// Abre la carpeta de instalación del cliente en el Explorador.
 #[tauri::command]
 pub fn open_client_folder() -> Result<(), String> {
@@ -669,7 +740,8 @@ fn apply_manifest_from_github(
     Ok(())
 }
 
-/// Lanza Main.exe desde el directorio de instalación del cliente.
+/// Lanza Main.exe con IP:puerto por command line (connect /uIP /pPuerto).
+/// Escribe game_config.ini con resolución, audio, etc. (sin IP/puerto).
 #[tauri::command]
 pub fn launch_game() -> Result<(), String> {
     let client_path = client_dir();
@@ -679,10 +751,17 @@ pub fn launch_game() -> Result<(), String> {
         return Err("Main.exe no encontrado. Actualiza el cliente primero.".to_string());
     }
 
+    write_game_config_ini()?;
+
+    let (ip, port) = parse_game_server_addr(GAME_SERVER_ADDR)?;
+
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new(&main_exe)
             .current_dir(&client_path)
+            .arg("connect")
+            .arg(format!("/u{}", ip))
+            .arg(format!("/p{}", port))
             .spawn()
             .map_err(|e| e.to_string())?;
     }
@@ -693,4 +772,13 @@ pub fn launch_game() -> Result<(), String> {
     }
 
     Ok(())
+}
+
+fn parse_game_server_addr(addr: &str) -> Result<(String, u16), String> {
+    let parts: Vec<&str> = addr.splitn(2, ':').collect();
+    if parts.len() != 2 {
+        return Err(format!("Formato inválido de servidor: {}", addr));
+    }
+    let port: u16 = parts[1].parse().map_err(|_| format!("Puerto inválido: {}", parts[1]))?;
+    Ok((parts[0].to_string(), port))
 }
