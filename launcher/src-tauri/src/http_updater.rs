@@ -42,7 +42,7 @@ fn config_path() -> PathBuf {
 
 fn load_config() -> LauncherConfig {
     if let Ok(data) = fs::read_to_string(config_path()) {
-        serde_json::from_str(&data).unwrap_or_default()
+        serde_json::from_str(strip_bom(&data)).unwrap_or_default()
     } else {
         LauncherConfig::default()
     }
@@ -186,7 +186,8 @@ fn get_installed_version() -> Option<String> {
     // Reintentar lectura si falla (el archivo podría estar siendo escrito)
     for _ in 0..5 {
         if let Ok(data) = fs::read_to_string(&path) {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&data) {
+            let data = strip_bom(&data);
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(data) {
                 return v["version"].as_str().map(|s| s.to_string());
             }
         }
@@ -225,6 +226,12 @@ fn get_http_client() -> reqwest::blocking::Client {
         .unwrap_or_default()
 }
 
+/// Quita BOM (UTF-8) del inicio del texto; PowerShell Set-Content -Encoding UTF8 lo agrega.
+fn strip_bom(s: &str) -> &str {
+    const BOM: &str = "\u{feff}";
+    s.strip_prefix(BOM).unwrap_or(s)
+}
+
 fn fetch_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
     log(&format!("Fetching JSON: {}", url));
     let client = get_http_client();
@@ -240,7 +247,8 @@ fn fetch_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
         return Err(err);
     }
     let text = resp.text().map_err(|e| e.to_string())?;
-    serde_json::from_str(&text).map_err(|e| {
+    let text = strip_bom(&text);
+    serde_json::from_str(text).map_err(|e| {
         log(&format!("Error parseando JSON de {}: {}", url, e));
         e.to_string()
     })
@@ -322,21 +330,23 @@ pub fn get_client_info() -> Result<ClientInfo, String> {
     if let Some(source) = find_client_source_dir() {
         let data = fs::read_to_string(source.join("version.json"))
             .map_err(|e| format!("Error leyendo version.json: {}", e))?;
+        let data = strip_bom(&data);
         let manifest: VersionManifest =
-            serde_json::from_str(&data).map_err(|e| format!("version.json inválido: {}", e))?;
+            serde_json::from_str(data).map_err(|e| format!("version.json inválido: {}", e))?;
         return Ok(ClientInfo {
             version: manifest.version,
             changelog: manifest.changelog,
         });
     }
 
-    // 2. Instalado: %LOCALAPPDATA%\MuVoid\client
+    // 2. Instalado: carpeta de instalación
     let installed = client_dir().join("version.json");
     if installed.exists() {
         let data = fs::read_to_string(&installed)
             .map_err(|e| format!("Error leyendo version.json: {}", e))?;
+        let data = strip_bom(&data);
         let manifest: VersionManifest =
-            serde_json::from_str(&data).map_err(|e| format!("version.json inválido: {}", e))?;
+            serde_json::from_str(data).map_err(|e| format!("version.json inválido: {}", e))?;
         return Ok(ClientInfo {
             version: manifest.version,
             changelog: manifest.changelog,
@@ -501,7 +511,8 @@ pub fn check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
         from_github = false;
         let data = fs::read_to_string(source.join("version.json"))
             .map_err(|e| format!("Error leyendo version.json: {}", e))?;
-        manifest = serde_json::from_str(&data).map_err(|e| format!("version.json inválido: {}", e))?;
+        let data = strip_bom(&data);
+        manifest = serde_json::from_str(data).map_err(|e| format!("version.json inválido: {}", e))?;
 
         apply_manifest_from_local(&app, &manifest, &source, &install_dir)?;
     } else {
