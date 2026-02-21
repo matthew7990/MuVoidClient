@@ -130,10 +130,10 @@ async function refreshServerStatus() {
   }
 }
 
-// ── Client source path (directorio compilado detectado) ──────────────────────
+// ── Carpeta de instalación (la que el usuario seleccionó, no la fuente) ───────
 async function loadClientPath() {
   try {
-    const path = await invoke('get_client_source_path');
+    const path = await invoke('get_client_path');
     clientPathEl.value = path;
   } catch {
     clientPathEl.value = '—';
@@ -223,6 +223,7 @@ async function runClientUpdate(silent = false) {
     await invoke('check_and_update_client');
     hideProgress();
     clearStatus();
+    await loadClientPath(); // Refrescar ruta por si cambió
     setPlaying('JUGAR');
   } catch (e) {
     hideProgress();

@@ -171,8 +171,10 @@ fn client_dir() -> PathBuf {
     PathBuf::from("C:\\Program Files\\MuVoid")
 }
 
-/// Busca el directorio donde hay archivos listos (version.json).
-/// Orden: config > instalación > MuVoidClient-Release (dev) > mismo dir que exe.
+/// Busca el directorio donde hay archivos listos (version.json) para usar como FUENTE de actualización.
+/// La carpeta de instalación (client_dir) NUNCA es fuente: es el destino. Usarla causaría errores
+/// si la instalación está incompleta (ej. falta object42/object28.bmd).
+/// Orden: config explícita > MuVoidClient-Release (dev).
 fn find_client_source_dir() -> Option<PathBuf> {
     let config = load_config();
     if let Some(ref src) = config.client_source {
@@ -180,11 +182,6 @@ fn find_client_source_dir() -> Option<PathBuf> {
         if p.join("version.json").exists() {
             return Some(p);
         }
-    }
-
-    let official = client_dir();
-    if official.join("version.json").exists() {
-        return Some(official);
     }
 
     // Dev: compile-client.bat copia a ../MuVoidClient-Release/MuVoidClient
