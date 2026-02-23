@@ -25,7 +25,7 @@ try {
         if (Test-Path $clientBuildDir) {
             Write-Host "[0/5] Sincronizando cliente a MuVoidClient-Release..." -ForegroundColor Gray
             if (-not (Test-Path $clientInRelease)) { New-Item -ItemType Directory -Path $clientInRelease -Force | Out-Null }
-            robocopy $clientBuildDir $clientInRelease /E /XO /NJH /NJS /NDL /NC /NS /NP | Out-Null
+            robocopy $clientBuildDir $clientInRelease /MIR /NJH /NJS /NDL /NC /NS /NP | Out-Null
             Write-Host "[OK] Cliente sincronizado (incluye Data/Object42/Object28.bmd, etc.)" -ForegroundColor Green
         }
     }

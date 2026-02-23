@@ -247,7 +247,8 @@ fn save_installed_manifest(install_dir: &Path, manifest: &VersionManifest) -> Re
 
 fn get_http_client() -> reqwest::blocking::Client {
     reqwest::blocking::Client::builder()
-        .timeout(Duration::from_secs(10))
+        .timeout(Duration::from_secs(120))  // 2 min para archivos grandes (Data/*.ozb, etc.)
+        .connect_timeout(Duration::from_secs(15))
         .user_agent("MuVoidLauncher/1.0")
         .build()
         .unwrap_or_default()
@@ -451,19 +452,23 @@ fn write_game_config_ini() -> Result<(), String> {
     let path = dir.join("game_config.ini");
 
     let lang = if g.language.is_empty() { "SPN" } else { g.language.as_str() };
+    let (ip, port) = parse_game_server_addr(GAME_SERVER_ADDR).unwrap_or(("127.0.0.1".to_string(), 44405));
     let ini = format!(
         "[LOGIN]\r\nVersion=1.03.34\r\nTestVersion=1.03.34\r\nRememberMe=0\r\nLanguage={}\r\nEncryptedUsername=\r\nEncryptedPassword=\r\n\
 [PARTITION]\r\nVersion=357\r\n\
 [Window]\r\nWidth={}\r\nHeight={}\r\nWindowed={}\r\n\
 [Graphics]\r\nColorDepth=0\r\nRenderTextType=0\r\n\
-[Audio]\r\nSoundEnabled={}\r\nMusicEnabled={}\r\nVolumeLevel={}\r\n",
+[Audio]\r\nSoundEnabled={}\r\nMusicEnabled={}\r\nVolumeLevel={}\r\n\
+[CONNECTION SETTINGS]\r\nServerIP={}\r\nServerPort={}\r\n",
         lang,
         g.window_width,
         g.window_height,
         if g.windowed { "1" } else { "0" },
         if g.sound_enabled { "1" } else { "0" },
         if g.music_enabled { "1" } else { "0" },
-        g.volume_level.min(10)
+        g.volume_level.min(10),
+        ip,
+        port
     );
 
     fs::write(&path, ini).map_err(|e| e.to_string())
@@ -606,8 +611,51 @@ fn do_check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// Elimina archivos en install_dir que NO están en el manifest (sincronización completa).
+fn purge_obsolete_files(manifest: &VersionManifest, install_dir: &Path) -> Result<(), String> {
+    use std::collections::HashSet;
+    let sep = std::path::MAIN_SEPARATOR_STR;
+    let manifest_paths: HashSet<String> = manifest.files.iter()
+        .map(|e| {
+            let p = install_dir.join(e.path.replace('/', sep));
+            p.to_string_lossy().to_lowercase()
+        })
+        .collect();
+
+    fn collect_obsolete(dir: &Path, manifest_paths: &HashSet<String>, out: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() {
+                    let key = path.to_string_lossy().to_lowercase();
+                    if !manifest_paths.contains(&key) {
+                        let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                        if name != "version.json" && name != "config.ini" {
+                            out.push(path);
+                        }
+                    }
+                } else if path.is_dir() {
+                    collect_obsolete(&path, manifest_paths, out);
+                }
+            }
+        }
+    }
+    let mut to_remove = Vec::new();
+    collect_obsolete(install_dir, &manifest_paths, &mut to_remove);
+
+    for path in &to_remove {
+        if let Err(e) = fs::remove_file(path) {
+            log(&format!("Advertencia: no se pudo eliminar obsoleto {}: {}", path.display(), e));
+        }
+    }
+    if !to_remove.is_empty() {
+        log(&format!("Eliminados {} archivos obsoletos", to_remove.len()));
+    }
+    Ok(())
+}
+
 /// Copia archivos desde el directorio local según el manifest.
-/// Solo copia lo necesario: si el archivo existe y el SHA256 coincide, lo omite.
+/// Copia TODO lo que difiere (SHA256 distinto o no existe). Nunca omite por error.
 fn apply_manifest_from_local(
     app: &tauri::AppHandle,
     manifest: &VersionManifest,
@@ -656,6 +704,7 @@ fn apply_manifest_from_local(
             eta_seconds: 0,
         });
     }
+    purge_obsolete_files(manifest, install_dir)?;
     if to_copy.is_empty() {
         log("Cliente ya actualizado, no hay archivos que copiar.");
     } else {
@@ -665,7 +714,7 @@ fn apply_manifest_from_local(
 }
 
 /// Descarga archivos desde GitHub según el manifest.
-/// Solo descarga lo necesario: si el archivo existe y el SHA256 coincide, lo omite.
+/// Descarga TODO lo que falta o difiere (SHA256). Reporta error si alguna descarga falla.
 fn apply_manifest_from_github(
     app: &tauri::AppHandle,
     manifest: &VersionManifest,
@@ -674,7 +723,6 @@ fn apply_manifest_from_github(
     let base = client_base_url();
     let sep = std::path::MAIN_SEPARATOR_STR;
 
-    // Solo descargar archivos que no existen o cuyo hash no coincide
     let files_to_download: Vec<_> = manifest.files.par_iter().filter(|entry| {
         let dest_path = install_dir.join(entry.path.replace('/', sep));
         let exists = fs::metadata(&dest_path).is_ok();
@@ -684,6 +732,7 @@ fn apply_manifest_from_github(
 
     if files_to_download.is_empty() {
         log("Cliente ya actualizado, no hay archivos que descargar.");
+        purge_obsolete_files(manifest, install_dir)?;
         return Ok(());
     }
     log(&format!("Descargando {} archivos (de {} en el manifest)", files_to_download.len(), manifest.files.len()));
@@ -694,10 +743,9 @@ fn apply_manifest_from_github(
     let downloaded_bytes = Arc::new(AtomicU64::new(0));
     let last_emit = Arc::new(Mutex::new(Instant::now()));
     let start_time = Instant::now();
+    let failed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
-    // Pool de hilos moderado para evitar saturación del sistema, pero manteniendo alta concurrencia
-    let pool = rayon::ThreadPoolBuilder::new().num_threads(32).build().map_err(|e| e.to_string())?;
-    
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(16).build().map_err(|e| e.to_string())?;
     let app_shared = Arc::new(app.clone());
     let base_shared = Arc::new(base);
     let install_dir_shared = Arc::new(install_dir.to_path_buf());
@@ -707,36 +755,54 @@ fn apply_manifest_from_github(
             let dest_path = install_dir_shared.join(entry.path.replace('/', sep));
             let url = format!("{}/{}", base_shared, entry.path.replace('\\', "/"));
 
-            if let Ok(_) = download_file(&url, &dest_path) {
-                let current_files = downloaded_files.fetch_add(1, Ordering::SeqCst) + 1;
-                let current_bytes = downloaded_bytes.fetch_add(entry.size, Ordering::SeqCst) + entry.size;
-                
-                let elapsed = start_time.elapsed().as_secs_f64();
-                let speed = if elapsed > 0.0 { (current_bytes as f64 / 1024.0 / 1024.0) / elapsed } else { 0.0 };
-                let eta = if speed > 0.0 {
-                    ((total_bytes - current_bytes) as f64 / 1024.0 / 1024.0 / speed) as u64
-                } else {
-                    0
-                };
-
-                // Throttling: Solo emitir si han pasado al menos 100ms para no saturar el JS bridge
-                let mut last = last_emit.lock().unwrap();
-                if last.elapsed() > Duration::from_millis(100) || current_files == total_files {
-                    *last = Instant::now();
-                    let _ = app_shared.emit("download-progress", DownloadProgress {
-                        current: current_files,
-                        total: total_files,
-                        file: entry.path.clone(),
-                        bytes_downloaded: current_bytes,
-                        total_bytes,
-                        speed_mbps: speed,
-                        eta_seconds: eta,
-                    });
+            const MAX_RETRIES: u32 = 3;
+            let mut last_err = String::new();
+            for attempt in 0..MAX_RETRIES {
+                match download_file(&url, &dest_path) {
+                    Ok(()) => {
+                        let current_files = downloaded_files.fetch_add(1, Ordering::SeqCst) + 1;
+                        let current_bytes = downloaded_bytes.fetch_add(entry.size, Ordering::SeqCst) + entry.size;
+                        let elapsed = start_time.elapsed().as_secs_f64();
+                        let speed = if elapsed > 0.0 { (current_bytes as f64 / 1024.0 / 1024.0) / elapsed } else { 0.0 };
+                        let eta = if speed > 0.0 {
+                            ((total_bytes.saturating_sub(current_bytes) as f64) / 1024.0 / 1024.0 / speed) as u64
+                        } else { 0 };
+                        let mut last = last_emit.lock().unwrap();
+                        if last.elapsed() > Duration::from_millis(100) || current_files == total_files {
+                            *last = Instant::now();
+                            let _ = app_shared.emit("download-progress", DownloadProgress {
+                                current: current_files,
+                                total: total_files,
+                                file: entry.path.clone(),
+                                bytes_downloaded: current_bytes,
+                                total_bytes,
+                                speed_mbps: speed,
+                                eta_seconds: eta,
+                            });
+                        }
+                        return;
+                    }
+                    Err(e) => {
+                        last_err = e.clone();
+                        log(&format!("Intento {} para {}: {}", attempt + 1, entry.path, e));
+                        if attempt < MAX_RETRIES - 1 {
+                            std::thread::sleep(Duration::from_secs(2));
+                        }
+                    }
                 }
             }
+            failed.lock().unwrap().push(format!("{}: {}", entry.path, last_err));
         });
     });
 
+    let failures = failed.lock().unwrap().clone();
+    if !failures.is_empty() {
+        let msg = format!("Fallaron {} descargas:\n{}", failures.len(), failures.join("\n"));
+        log(&msg);
+        return Err(msg);
+    }
+
+    purge_obsolete_files(manifest, install_dir)?;
     Ok(())
 }
 
