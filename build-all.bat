@@ -11,8 +11,8 @@ echo   MuVoidClient - Build completo (launcher + cliente)
 echo ═══════════════════════════════════════════════════════════
 echo.
 
-REM ── 1. Compilar cliente MuMain ────────────────────────────────────────────
-echo [1/4] Compilando cliente MuMain...
+REM ── 1. Compilar cliente Source ────────────────────────────────────────────
+echo [1/4] Compilando cliente Source (MuMain HQ)...
 call "%ROOT%compile-client.bat" --no-pause
 if errorlevel 1 (
   echo ERROR: Fallo compilacion del cliente.

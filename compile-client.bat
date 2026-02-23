@@ -1,8 +1,17 @@
 @echo off
+setlocal enabledelayedexpansion
 chcp 65001 >nul
 REM Compila el cliente MuMain (Mu Online)
+echo Cerrando instancias previas si existen...
+taskkill /f /im Main.exe 2>nul
 echo Compilando cliente MuMain...
-cd /d "%~dp0MuMain"
+
+cd /d "%~dp0"
+
+REM Aplicar Interface 99b si existen carpetas Interface/Custom (opcional)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\apply-interface-99.ps1"
+
+cd /d "%~dp0Source"
 
 REM Usar generador Visual Studio - evita el bloqueo en "Detecting C compiler ABI info"
 REM No requiere vcvarsall: VS generator encuentra todo desde el registro
@@ -28,21 +37,23 @@ REM Configurar si no existe el cache (incremental: omitir en builds siguientes)
 if not exist "%BUILD_DIR%\CMakeCache.txt" (
   echo Configurando con %GENERATOR% -A Win32...
   cmake -B "%BUILD_DIR%" -G "%GENERATOR%" -A Win32 -DENABLE_EDITOR=OFF
+) else (
+  REM Re-configurar para asegurar que los cambios en CMakeLists.txt se apliquen y forzar editor desactivado
+  echo Re-configurando...
+  cmake -B "%BUILD_DIR%" -DENABLE_EDITOR=OFF
+)
 if errorlevel 1 (
   echo ERROR en configuracion.
   if "%1" neq "--no-pause" pause
   exit /b 1
 )
-) else (
-  REM Re-configurar en silencio para aplicar cambios en CMakeLists.txt
-  cmake -B "%BUILD_DIR%" >nul 2>&1
-)
+
 
 REM Incremental: solo recompila archivos modificados.
-REM --parallel pasa -m a MSBuild (paraleliza proyectos).
+REM --parallel y /maxcpucount usan todos los núcleos del procesador.
 REM /MP en CMakeLists paraleliza .cpp dentro del mismo proyecto.
-echo Compilando Release...
-cmake --build "%BUILD_DIR%" --config Release --parallel -- /maxcpucount
+echo Compilando Release con %NUMBER_OF_PROCESSORS% núcleos...
+cmake --build "%BUILD_DIR%" --config Release --parallel %NUMBER_OF_PROCESSORS% -- /maxcpucount:%NUMBER_OF_PROCESSORS%
 if errorlevel 1 (
   echo ERROR en compilacion.
   if "%1" neq "--no-pause" pause
@@ -58,13 +69,30 @@ REM Generar version manifest del cliente (para que el launcher detecte el compil
 if not "%EXE_PATH%"=="" (
     echo.
     echo Generando version manifest...
-    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\generate-client-manifest.ps1" "%~dp0MuMain\%EXE_PATH%"
+    set "FULL_EXE_PATH=%~dp0Source\%EXE_PATH%"
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\generate-client-manifest.ps1" "!FULL_EXE_PATH!"
     if errorlevel 1 echo [ADVERTENCIA] No se pudo generar el version manifest.
+
+    REM Copiar automáticamente al repositorio de Release si existe
+    set "RELEASE_DIR=%~dp0..\MuVoidClient-Release\MuVoidClient"
+    if exist "%~dp0..\MuVoidClient-Release" (
+        echo Sincronizando con repositorio de Release...
+        if not exist "!RELEASE_DIR!" mkdir "!RELEASE_DIR!"
+        
+        REM Obtener directorio de compilación
+        for %%I in ("!FULL_EXE_PATH!") do set "BUILD_OUT_DIR=%%~dpI"
+        
+        REM Sincronización completa (mirror: copia todo y elimina obsoletos en destino)
+        robocopy "!BUILD_OUT_DIR!." "!RELEASE_DIR!." /MIR /NJH /NJS /NDL /NC /NS /NP
+        echo [OK] Cliente sincronizado en: !RELEASE_DIR!
+    ) else (
+        echo [INFO] No se encontro MuVoidClient-Release, saltando sincronizacion.
+    )
 ) else (
-    echo [ADVERTENCIA] No se encontro Main.exe, saltando generacion de manifest.
+    echo [ADVERTENCIA] No se encontro Main.exe, saltando generacion de manifest e instalacion.
 )
 
 echo.
-echo Compilacion exitosa. Ejecuta start-client.bat o el launcher para iniciar el cliente.
+echo Compilacion exitosa.
 if "%1"=="--no-pause" exit /b 0
 pause

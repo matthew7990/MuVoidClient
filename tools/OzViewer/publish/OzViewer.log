@@ -1,0 +1,47 @@
+[2026-02-22 20:41:08.472] Inicio Main
+[2026-02-22 20:41:08.495] ApplicationConfiguration.Initialize
+[2026-02-22 20:41:08.507] Creando MainForm
+[2026-02-22 20:41:08.517] MainForm ctor inicio
+[2026-02-22 20:41:08.520] InitializeComponent inicio
+[2026-02-22 20:41:08.594] ERROR: Excepcion en Main | InvalidOperationException: SplitterDistance debe estar entre Panel1MinSize y Ancho - Panel2MinSize. |    at System.Windows.Forms.SplitContainer.set_SplitterDistance(Int32 value) |    at System.Windows.Forms.SplitContainer.ApplyPanel2MinSize(Int32 value) |    at OzViewer.MainForm.InitializeComponent() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 98 |    at OzViewer.MainForm..ctor() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 13 |    at OzViewer.Program.Main(String[] args) in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\Program.cs:line 24
+[2026-02-22 20:41:12.972] Inicio Main
+[2026-02-22 20:41:12.994] ApplicationConfiguration.Initialize
+[2026-02-22 20:41:13.004] Creando MainForm
+[2026-02-22 20:41:13.013] MainForm ctor inicio
+[2026-02-22 20:41:13.017] InitializeComponent inicio
+[2026-02-22 20:41:13.080] ERROR: Excepcion en Main | InvalidOperationException: SplitterDistance debe estar entre Panel1MinSize y Ancho - Panel2MinSize. |    at System.Windows.Forms.SplitContainer.set_SplitterDistance(Int32 value) |    at System.Windows.Forms.SplitContainer.ApplyPanel2MinSize(Int32 value) |    at OzViewer.MainForm.InitializeComponent() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 98 |    at OzViewer.MainForm..ctor() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 13 |    at OzViewer.Program.Main(String[] args) in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\Program.cs:line 24
+[2026-02-22 20:41:53.805] Inicio Main
+[2026-02-22 20:41:53.827] ApplicationConfiguration.Initialize
+[2026-02-22 20:41:53.837] Creando MainForm
+[2026-02-22 20:41:53.846] MainForm ctor inicio
+[2026-02-22 20:41:53.849] InitializeComponent inicio
+[2026-02-22 20:41:53.899] ResumeLayout
+[2026-02-22 20:41:53.899] MainForm ctor fin
+[2026-02-22 20:41:53.920] Application.Run
+[2026-02-22 20:41:54.008] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_15() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 119
+[2026-02-22 20:41:54.025] Shown OK
+[2026-02-22 20:41:54.026] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_15() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 119
+[2026-02-22 20:42:41.249] Fin Main (normal)
+[2026-02-22 20:44:03.989] Inicio Main
+[2026-02-22 20:44:04.012] ApplicationConfiguration.Initialize
+[2026-02-22 20:44:04.022] Creando MainForm
+[2026-02-22 20:44:04.032] MainForm ctor inicio
+[2026-02-22 20:44:04.035] InitializeComponent inicio
+[2026-02-22 20:44:04.093] ResumeLayout
+[2026-02-22 20:44:04.093] MainForm ctor fin
+[2026-02-22 20:44:04.107] Application.Run
+[2026-02-22 20:44:04.189] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_17() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 133
+[2026-02-22 20:44:04.212] Shown OK
+[2026-02-22 20:44:04.213] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_17() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 133
+[2026-02-22 20:45:12.782] Fin Main (normal)
+[2026-02-22 20:48:27.113] Inicio Main
+[2026-02-22 20:48:27.135] ApplicationConfiguration.Initialize
+[2026-02-22 20:48:27.146] Creando MainForm
+[2026-02-22 20:48:27.156] MainForm ctor inicio
+[2026-02-22 20:48:27.159] InitializeComponent inicio
+[2026-02-22 20:48:27.217] ResumeLayout
+[2026-02-22 20:48:27.217] MainForm ctor fin
+[2026-02-22 20:48:27.233] Application.Run
+[2026-02-22 20:48:27.326] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_18() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 134
+[2026-02-22 20:48:27.347] Shown OK
+[2026-02-22 20:48:27.347] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<InitializeComponent>g__ApplyLayout|5_18() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 134

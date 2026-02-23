@@ -1,0 +1,7 @@
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\MuVoidConfigEditor.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\D3DCompiler_47_cor3.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\PenImc_cor3.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\PresentationNative_cor3.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\vcruntime140_cor3.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\wpfgfx_cor3.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\publish\MuVoidConfigEditor.exe

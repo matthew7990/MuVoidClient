@@ -1,0 +1,15 @@
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\bin\Debug\net8.0-windows\OzViewer.exe
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\bin\Debug\net8.0-windows\OzViewer.deps.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\bin\Debug\net8.0-windows\OzViewer.runtimeconfig.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\bin\Debug\net8.0-windows\OzViewer.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\bin\Debug\net8.0-windows\OzViewer.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.AssemblyInfoInputs.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.AssemblyInfo.cs
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.csproj.CoreCompileInputs.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.sourcelink.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\refint\OzViewer.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\OzViewer.genruntimeconfig.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\obj\Debug\net8.0-windows\ref\OzViewer.dll

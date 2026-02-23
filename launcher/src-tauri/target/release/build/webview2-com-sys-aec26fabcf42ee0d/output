@@ -1,0 +1,2 @@
+cargo:rustc-link-search=native=C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\launcher\src-tauri\target\release\build\webview2-com-sys-aec26fabcf42ee0d\out\x64
+cargo:rustc-link-lib=advapi32

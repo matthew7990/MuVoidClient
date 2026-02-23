@@ -1,0 +1,15 @@
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\bin\Debug\net8.0-windows\MuVoidConfigEditor.exe
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\bin\Debug\net8.0-windows\MuVoidConfigEditor.deps.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\bin\Debug\net8.0-windows\MuVoidConfigEditor.runtimeconfig.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\bin\Debug\net8.0-windows\MuVoidConfigEditor.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\bin\Debug\net8.0-windows\MuVoidConfigEditor.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.AssemblyInfoInputs.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.AssemblyInfo.cs
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.csproj.CoreCompileInputs.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.sourcelink.json
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\refint\MuVoidConfigEditor.dll
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\MuVoidConfigEditor.genruntimeconfig.cache
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\MuVoidConfigEditor\obj\Debug\net8.0-windows\ref\MuVoidConfigEditor.dll

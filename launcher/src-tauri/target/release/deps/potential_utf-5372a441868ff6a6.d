@@ -1,0 +1,9 @@
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\launcher\src-tauri\target\release\deps\potential_utf-5372a441868ff6a6.d: C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\lib.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\uchar.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\ustr.rs
+
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\launcher\src-tauri\target\release\deps\libpotential_utf-5372a441868ff6a6.rlib: C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\lib.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\uchar.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\ustr.rs
+
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\launcher\src-tauri\target\release\deps\libpotential_utf-5372a441868ff6a6.rmeta: C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\lib.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\uchar.rs C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\ustr.rs
+
+C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\lib.rs:
+C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\uchar.rs:
+C:\Users\matia\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\potential_utf-0.1.4\src\ustr.rs:

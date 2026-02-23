@@ -1,0 +1,2 @@
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\publish\OzViewer.pdb
+C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\publish\OzViewer.exe

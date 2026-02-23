@@ -2,3 +2,6 @@
 .idea/
 .vscode/
 *.user
+
+# Source tiene código de MuMain (clonado); evitar conflicto con .git anidado
+Source/.git/

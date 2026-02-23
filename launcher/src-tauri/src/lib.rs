@@ -17,6 +17,10 @@ pub fn run() {
             http_updater::start_launcher_update,
             http_updater::check_and_update_client,
             http_updater::launch_game,
+            http_updater::is_client_installed,
+            http_updater::select_install_directory,
+            http_updater::get_game_settings,
+            http_updater::save_game_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
