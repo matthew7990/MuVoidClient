@@ -83,15 +83,8 @@ public class HudEditorPanel : Panel
         e.Graphics.Clear(Color.FromArgb(25, 25, 35));
         e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
         e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-
-        if (string.IsNullOrEmpty(_baseFolder) || !Directory.Exists(_baseFolder))
-        {
-            var ifacePath = Paths.DefaultInterfaceFolder;
-            e.Graphics.DrawString("Interface no cargada.", Font, Brushes.Orange, 20, 20);
-            e.Graphics.DrawString($"Ruta esperada: {ifacePath}", new Font(Font.FontFamily, 8), Brushes.Gray, 20, 42);
-            e.Graphics.DrawString("Archivo → Abrir carpeta Interface (o arrastra la carpeta aquí)", Font, Brushes.Gray, 20, 62);
-            return;
-        }
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        e.Graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
         var (scale, offX, offY) = GetTransform();
         e.Graphics.TranslateTransform(offX, offY);
@@ -99,18 +92,52 @@ public class HudEditorPanel : Panel
 
         foreach (var el in _document.Elements.Where(e => e.Visible && e.Category == CurrentCategory).OrderBy(e => e.ZOrder))
         {
-            var path = HudDocument.ResolveImagePath(_baseFolder, el);
-            if (!File.Exists(path)) continue;
-
-            if (!_cache.TryGetValue(path, out var img))
+            if (el.IsText)
             {
-                img = OzImageLoader.Load(path);
-                _cache[path] = img;
+                var fontSize = Math.Max(1, el.FontSize);
+                var style = el.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                using var font = new Font(el.FontName, fontSize, style);
+                var color = ColorTranslator.FromHtml(el.TextColorHex);
+                using var brush = new SolidBrush(color);
+                
+                // Medir texto si el ancho/alto es 0
+                if (el.Width <= 0 || el.Height <= 0)
+                {
+                    var size = e.Graphics.MeasureString(el.TextValue, font);
+                    el.Width = size.Width;
+                    el.Height = size.Height;
+                }
+
+                e.Graphics.DrawString(el.TextValue, font, brush, el.X, el.Y);
+
+                if (el == _selected)
+                {
+                    using var pen = new Pen(Color.Cyan, 1) { DashStyle = DashStyle.Dash };
+                    e.Graphics.DrawRectangle(pen, el.X, el.Y, el.Width, el.Height);
+                }
             }
-
-            if (img != null)
+            else
             {
-                e.Graphics.DrawImage(img, el.X, el.Y, el.Width, el.Height);
+                var path = HudDocument.ResolveImagePath(_baseFolder ?? "", el);
+                if (File.Exists(path))
+                {
+                    if (!_cache.TryGetValue(path, out var img))
+                    {
+                        img = OzImageLoader.Load(path);
+                        _cache[path] = img;
+                    }
+
+                    if (img != null)
+                        e.Graphics.DrawImage(img, el.X, el.Y, el.Width, el.Height);
+                }
+                else
+                {
+                    // Placeholder for missing image
+                    using var pen = new Pen(Color.Red, 1);
+                    e.Graphics.DrawRectangle(pen, el.X, el.Y, el.Width, el.Height);
+                    e.Graphics.DrawLine(pen, el.X, el.Y, el.X + el.Width, el.Y + el.Height);
+                }
+
                 if (el == _selected)
                 {
                     using var pen = new Pen(Color.Cyan, 2);
@@ -173,12 +200,9 @@ public class HudEditorPanel : Panel
             var (scale, _, _) = GetTransform();
             var dx = (e.X - _dragStartX) / scale;
             var dy = (e.Y - _dragStartY) / scale;
-            _selected.X = Math.Max(0, _elemStartX + dx);
-            _selected.Y = Math.Max(0, _elemStartY + dy);
-            _selected.X = Math.Min(_document.GameWidth - _selected.Width, _selected.X);
-            _selected.Y = Math.Min(_document.GameHeight - _selected.Height, _selected.Y);
+            _selected.X = (float)Math.Round(_elemStartX + dx);
+            _selected.Y = (float)Math.Round(_elemStartY + dy);
             Invalidate();
-            // Solo notificar posición, sin redibujar propiedades completas durante el arrastre
             DragMoved?.Invoke(_selected);
         }
     }

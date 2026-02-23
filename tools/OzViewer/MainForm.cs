@@ -6,6 +6,17 @@ public partial class MainForm : Form
     private string? _layoutPath = null;
     private Image? _currentImage = null;
     private string? _currentImagePath = null;
+    private HudDocument _sharedDoc = null!;
+    private HudEditorPanel _hudEditor = null!;
+    private HudPropertiesPanel _propertiesPanel = null!;
+    private TabControl _tabControl = null!;
+    private TabControl _subTabControl = null!;
+    private ListBox _listBox = null!;
+    private PictureBox _pictureBox = null!;
+    private Label _statusLabel = null!;
+    private ToolStripStatusLabel _editorStatusLabel = null!;
+    private SplitContainer _filesSplit = null!;
+    private Dictionary<TabPage, HudEditorPanel> _panelsByTab = new();
 
     public MainForm()
     {
@@ -54,9 +65,10 @@ public partial class MainForm : Form
         MainMenuStrip = menuStrip;
 
         _tabControl = new TabControl { Dock = DockStyle.Fill };
-        _tabControl.TabPages.Add("Editor HUD");  // Primero: lo que más importa
+        _tabControl.TabPages.Add("Editor HUD");
         _tabControl.TabPages.Add("Archivos");
 
+        // --- Pestaña Archivos ---
         _filesSplit = new SplitContainer { Dock = DockStyle.Fill };
         _listBox = new ListBox { Dock = DockStyle.Fill, Font = new Font("Consolas", 9f) };
         _listBox.SelectedIndexChanged += ListBox_SelectedIndexChanged;
@@ -78,83 +90,29 @@ public partial class MainForm : Form
         _filesSplit.Panel2.Controls.Add(_pictureBox);
         _filesSplit.Panel2.Controls.Add(_statusLabel);
         _filesSplit.Panel2.Controls.SetChildIndex(_statusLabel, 0);
+        _tabControl.TabPages[1].Controls.Add(_filesSplit);
 
-        _tabControl.TabPages[1].Controls.Add(_filesSplit);  // Archivos en pestaña 1
-
+        // --- Pestaña Editor ---
         var editorSplit = new SplitContainer { Dock = DockStyle.Fill };
-        
-        // --- Nueva sub-pestañas para categorías ---
-        var subTabControl = new TabControl { Dock = DockStyle.Fill };
-        var categories = new[] { "HUD", "Inventario", "Personaje", "Amigos", "Carga" };
-        var panelsByTab = new Dictionary<TabPage, HudEditorPanel>();
-
-        foreach (var cat in categories)
-        {
-            var page = new TabPage(cat);
-            var panel = new HudEditorPanel 
-            { 
-                Dock = DockStyle.Fill, 
-                BackColor = Color.FromArgb(25, 25, 35),
-                CurrentCategory = cat
-            };
-            page.Controls.Add(panel);
-            subTabControl.TabPages.Add(page);
-            panelsByTab[page] = panel;
-        }
-
-        _hudEditor = panelsByTab[subTabControl.TabPages[0]]; // Default
-        subTabControl.SelectedIndexChanged += (_, _) =>
-        {
-            var oldDoc = _hudEditor.Document;
-            var oldFolder = _hudEditor.BaseFolder;
-            
-            _hudEditor = panelsByTab[subTabControl.SelectedTab!];
-            _hudEditor.Document = oldDoc;
-            _hudEditor.BaseFolder = oldFolder;
-            
-            _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
-            _propertiesPanel.SelectedElement = null;
-            _propertiesPanel.RefreshElementList();
-            _hudEditor.Invalidate();
-        };
-        // ------------------------------------------
+        _subTabControl = new TabControl { Dock = DockStyle.Fill };
+        _subTabControl.SelectedIndexChanged += SubTabControl_SelectedIndexChanged;
 
         _propertiesPanel = new HudPropertiesPanel { Dock = DockStyle.Fill };
+        _sharedDoc = HudDocument.CreateDefault();
+        _propertiesPanel.Document = _sharedDoc;
 
-        // Documento compartido inicial
-        var sharedDoc = HudDocument.CreateDefault();
+        RebuildTabs();
 
-        // Configuración inicial compartida
-        foreach (var pnl in panelsByTab.Values)
-        {
-            pnl.Document = sharedDoc;
-            pnl.SelectionChanged += () => {
-                if (_hudEditor == pnl) _propertiesPanel.SelectedElement = pnl.SelectedElement;
-            };
-            pnl.DragMoved += (el) => {
-                if (_hudEditor == pnl) _propertiesPanel.UpdatePositionOnly(el);
-            };
-            pnl.HoveredElementChanged += (el) => {
-                if (_hudEditor == pnl) _editorStatusLabel.Text = el != null ? $"Sobre: {el.ResolvePath} ({el.X:F0},{el.Y:F0})" : "";
-            };
-        }
-
-        _propertiesPanel.Document = sharedDoc;
-        _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
         _propertiesPanel.ElementSelected += (el) =>
         {
             _hudEditor.SelectedElement = el;
             _propertiesPanel.SelectedElement = el;
         };
-        _propertiesPanel.ElementChanged += () =>
-        {
-            _hudEditor.Invalidate();
-        };
+        _propertiesPanel.ElementChanged += () => { _hudEditor.Invalidate(); };
 
-        editorSplit.Panel1.Controls.Add(subTabControl);
+        editorSplit.Panel1.Controls.Add(_subTabControl);
         editorSplit.Panel2.Controls.Add(_propertiesPanel);
-
-        _tabControl.TabPages[0].Controls.Add(editorSplit);  // Editor HUD en pestaña 0
+        _tabControl.TabPages[0].Controls.Add(editorSplit);
 
         _editorStatusLabel = new ToolStripStatusLabel { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
         var statusStrip = new StatusStrip { Items = { _editorStatusLabel } };
@@ -168,58 +126,86 @@ public partial class MainForm : Form
         {
             try
             {
-                // Aplicar MinSize/SplitterDistance después del layout (evita error cuando aún no hay dimensiones)
-                void ApplyLayout()
-                {
-                    try
-                    {
-                        if (_filesSplit.Width > 0 && _filesSplit.Height > 0)
-                        {
-                            _filesSplit.Panel1MinSize = 120;
-                            _filesSplit.Panel2MinSize = 150;
-                            var dim = _filesSplit.Orientation == Orientation.Horizontal ? _filesSplit.Height : _filesSplit.Width;
-                            if (dim > 150)
-                                _filesSplit.SplitterDistance = Math.Clamp(220, 120, dim - 150);
-                        }
-                        if (_tabControl.TabPages[0].Controls[0] is SplitContainer es && es.Width > 200)
-                        {
-                            es.Panel2MinSize = 180;
-                            es.Panel2.Width = 200;
-                        }
-                    }
-                    catch (Exception ex2) { Log.Error("Layout", ex2); }
-                }
                 ApplyLayout();
-                BeginInvoke(ApplyLayout);
                 _propertiesPanel.RefreshElementList();
-                // Cargar Interface automáticamente si existe (Source\src\bin\Data\Interface)
                 var ifacePath = Paths.DefaultInterfaceFolder;
-                if (Directory.Exists(ifacePath))
-                {
-                    LoadFolder(ifacePath, showHudTab: true);
-                }
+                if (Directory.Exists(ifacePath)) LoadFolder(ifacePath, showHudTab: true);
                 else
                 {
                     _hudEditor.BaseFolder = null;
-                    _statusLabel.Text = $"Interface no encontrada. Esperada: {ifacePath}";
+                    _statusLabel.Text = $"Interface no encontrada: {ifacePath}";
                 }
-                Log.Write("Shown OK");
             }
             catch (Exception ex) { Log.Error("Shown", ex); }
         };
 
-        Log.Write("ResumeLayout");
         ResumeLayout(false);
     }
 
-    private TabControl _tabControl = null!;
-    private SplitContainer _filesSplit = null!;
-    private ListBox _listBox = null!;
-    private PictureBox _pictureBox = null!;
-    private Label _statusLabel = null!;
-    private HudEditorPanel _hudEditor = null!;
-    private HudPropertiesPanel _propertiesPanel = null!;
-    private ToolStripStatusLabel _editorStatusLabel = null!;
+    private void ApplyLayout()
+    {
+        try
+        {
+            if (_filesSplit.Width > 0 && _filesSplit.Height > 0)
+            {
+                _filesSplit.Panel1MinSize = 120;
+                _filesSplit.Panel2MinSize = 150;
+                var dim = _filesSplit.Orientation == Orientation.Horizontal ? _filesSplit.Height : _filesSplit.Width;
+                if (dim > 150) _filesSplit.SplitterDistance = Math.Clamp(220, 120, dim - 150);
+            }
+            if (_tabControl.TabPages[0].Controls[0] is SplitContainer es && es.Width > 200)
+            {
+                es.Panel2MinSize = 180;
+                es.Panel2.Width = 200;
+            }
+        }
+        catch (Exception ex) { Log.Error("Layout", ex); }
+    }
+
+    private void RebuildTabs()
+    {
+        _subTabControl.SelectedIndexChanged -= SubTabControl_SelectedIndexChanged;
+        _subTabControl.TabPages.Clear();
+        _panelsByTab.Clear();
+
+        var categories = _sharedDoc.Elements.Select(e => e.Category).Distinct().OrderBy(c => c == "HUD" ? 0 : 1).ThenBy(c => c).ToList();
+        if (!categories.Contains("HUD")) categories.Insert(0, "HUD");
+
+        foreach (var cat in categories)
+        {
+            var page = new TabPage(cat);
+            var panel = new HudEditorPanel 
+            { 
+                Dock = DockStyle.Fill, 
+                BackColor = Color.FromArgb(25, 25, 35),
+                CurrentCategory = cat,
+                Document = _sharedDoc,
+                BaseFolder = _hudEditor?.BaseFolder
+            };
+            
+            panel.SelectionChanged += () => { if (_hudEditor == panel) _propertiesPanel.SelectedElement = panel.SelectedElement; };
+            panel.DragMoved += (el) => { if (_hudEditor == panel) _propertiesPanel.UpdatePositionOnly(el); };
+            panel.HoveredElementChanged += (el) => { if (_hudEditor == panel) _editorStatusLabel.Text = el != null ? $"Sobre: {el.ResolvePath} ({el.X:F0},{el.Y:F0})" : ""; };
+
+            page.Controls.Add(panel);
+            _subTabControl.TabPages.Add(page);
+            _panelsByTab[page] = panel;
+        }
+
+        _hudEditor = _panelsByTab[_subTabControl.TabPages[0]];
+        _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
+        _subTabControl.SelectedIndexChanged += SubTabControl_SelectedIndexChanged;
+    }
+
+    private void SubTabControl_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        if (_subTabControl.SelectedTab == null) return;
+        _hudEditor = _panelsByTab[_subTabControl.SelectedTab];
+        _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
+        _propertiesPanel.SelectedElement = null;
+        _propertiesPanel.RefreshElementList();
+        _hudEditor.Invalidate();
+    }
 
     private void OpenFolder()
     {
@@ -233,7 +219,6 @@ public partial class MainForm : Form
         if (dlg.ShowDialog() == DialogResult.OK)
         {
             LoadFolder(dlg.SelectedPath, showHudTab: true);
-            _hudEditor.BaseFolder = dlg.SelectedPath;
         }
     }
 
@@ -244,8 +229,7 @@ public partial class MainForm : Form
             Filter = "Imágenes (*.ozj;*.ozt;*.jpg)|*.ozj;*.ozt;*.jpg|Todos (*.*)|*.*",
             Title = "Abrir archivo"
         };
-        if (dlg.ShowDialog() == DialogResult.OK)
-            LoadImage(dlg.FileName);
+        if (dlg.ShowDialog() == DialogResult.OK) LoadImage(dlg.FileName);
     }
 
     public void LoadFolder(string path, bool showHudTab = false)
@@ -258,16 +242,12 @@ public partial class MainForm : Form
             .OrderBy(Path.GetFileName)
             .ToArray();
 
-        foreach (var f in files)
-            _listBox.Items.Add(f);
-
-        if (_listBox.Items.Count > 0)
-            _listBox.SelectedIndex = 0;
+        foreach (var f in files) _listBox.Items.Add(f);
+        if (_listBox.Items.Count > 0) _listBox.SelectedIndex = 0;
 
         _statusLabel.Text = $"{_listBox.Items.Count} archivos en {path}";
         _hudEditor.BaseFolder = path;
-        _hudEditor.Invalidate();
-        _propertiesPanel.RefreshElementList();
+        foreach (var pnl in _panelsByTab.Values) pnl.BaseFolder = path;
 
         var layoutFile = Path.Combine(path, "hud_layout.json");
         if (File.Exists(layoutFile))
@@ -279,11 +259,9 @@ public partial class MainForm : Form
                 _layoutPath = layoutFile;
                 _statusLabel.Text += " | Layout cargado";
             }
-            catch { /* ignorar si falla */ }
+            catch { }
         }
-
-        if (showHudTab)
-            _tabControl.SelectedIndex = 0;  // Editor HUD
+        if (showHudTab) _tabControl.SelectedIndex = 0;
     }
 
     private void LoadLayout()
@@ -304,10 +282,7 @@ public partial class MainForm : Form
                 _layoutPath = dlg.FileName;
                 _statusLabel.Text = $"Layout cargado: {Path.GetFileName(dlg.FileName)}";
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
     }
 
@@ -325,14 +300,11 @@ public partial class MainForm : Form
         {
             try
             {
-                _hudEditor.Document.Save(dlg.FileName);
+                _sharedDoc.Save(dlg.FileName);
                 _layoutPath = dlg.FileName;
                 _statusLabel.Text = $"Layout guardado: {Path.GetFileName(dlg.FileName)}";
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
     }
 
@@ -344,30 +316,15 @@ public partial class MainForm : Form
 
     private void UpdateAllTabDocuments(HudDocument doc)
     {
-        _hudEditor.Document = doc;
+        _sharedDoc = doc;
         _propertiesPanel.Document = doc;
-        
-        // El subTabControl es el Control 0 del Panel 1 del editorSplit
-        // Buscamos el subTabControl para actualizar todos sus paneles
-        if (_tabControl.TabPages[0].Controls[0] is SplitContainer es && es.Panel1.Controls[0] is TabControl stc)
-        {
-            foreach (TabPage page in stc.TabPages)
-            {
-                if (page.Controls[0] is HudEditorPanel pnl)
-                {
-                    pnl.Document = doc;
-                    pnl.Invalidate();
-                }
-            }
-        }
-
-        _propertiesPanel.RefreshElementList();
+        RebuildTabs();
         _hudEditor.Invalidate();
     }
 
     private void ExportCppHeader()
     {
-        var defaultPath = Path.Combine(Paths.WorkspaceRoot, "Source", "src", "source", "HudLayout.h");
+        var defaultPath = Path.Combine(Paths.WorkspaceRoot, "MuMain", "src", "source", "HudLayout.h");
         using var dlg = new SaveFileDialog
         {
             Filter = "Header C++ (*.h)|*.h|Todos (*.*)|*.*",
@@ -379,15 +336,12 @@ public partial class MainForm : Form
         {
             try
             {
-                var content = HudCppExporter.ExportHeader(_hudEditor.Document);
+                var content = HudCppExporter.ExportHeader(_sharedDoc);
                 File.WriteAllText(dlg.FileName, content);
                 _statusLabel.Text = $"Exportado: {Path.GetFileName(dlg.FileName)}";
-                MessageBox.Show($"Header generado.\n\nIncluye en el código:\n#include \"HudLayout.h\"\n\nUsa las constantes:\nHudLayout::NEWUI_MENU01_X, HudLayout::NEWUI_MENU01_Y, etc.", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Header generado.", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            catch (Exception ex) { MessageBox.Show($"Error: {ex.Message}", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Error); }
         }
     }
 
@@ -404,8 +358,7 @@ public partial class MainForm : Form
         if (_listBox.SelectedIndex >= 0 && !string.IsNullOrEmpty(_currentFolder))
         {
             var name = _listBox.SelectedItem?.ToString();
-            if (!string.IsNullOrEmpty(name))
-                LoadImage(Path.Combine(_currentFolder, name.Replace('/', Path.DirectorySeparatorChar)));
+            if (!string.IsNullOrEmpty(name)) LoadImage(Path.Combine(_currentFolder, name.Replace('/', Path.DirectorySeparatorChar)));
         }
     }
 
@@ -414,17 +367,14 @@ public partial class MainForm : Form
         try
         {
             _currentImage?.Dispose();
-            _currentImage = null;
+            _currentImage = OzImageLoader.Load(path);
             _currentImagePath = path;
-
-            var img = OzImageLoader.Load(path);
-            if (img != null)
+            if (_currentImage != null)
             {
-                _currentImage = img;
                 var old = _pictureBox.Image;
-                _pictureBox.Image = img;
+                _pictureBox.Image = _currentImage;
                 old?.Dispose();
-                _statusLabel.Text = $"{Path.GetFileName(path)} — {img.Width}×{img.Height}";
+                _statusLabel.Text = $"{Path.GetFileName(path)} — {_currentImage.Width}×{_currentImage.Height}";
             }
             else
             {
@@ -433,27 +383,13 @@ public partial class MainForm : Form
                 _statusLabel.Text = $"No se pudo cargar: {Path.GetFileName(path)}";
             }
         }
-        catch (Exception ex)
-        {
-            _pictureBox.Image?.Dispose();
-            _pictureBox.Image = null;
-            _statusLabel.Text = $"Error: {ex.Message}";
-        }
+        catch (Exception ex) { _statusLabel.Text = $"Error: {ex.Message}"; }
     }
 
     private void SaveAsOzj()
     {
-        if (_currentImage == null)
-        {
-            MessageBox.Show("No hay imagen cargada.", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-        using var dlg = new SaveFileDialog
-        {
-            Filter = "OZJ (*.ozj)|*.ozj|Todos (*.*)|*.*",
-            FileName = _currentImagePath != null ? Path.GetFileNameWithoutExtension(_currentImagePath) + ".ozj" : "image.ozj",
-            Title = "Guardar como OZJ"
-        };
+        if (_currentImage == null) return;
+        using var dlg = new SaveFileDialog { Filter = "OZJ (*.ozj)|*.ozj", FileName = _currentImagePath != null ? Path.GetFileNameWithoutExtension(_currentImagePath) + ".ozj" : "image.ozj" };
         if (dlg.ShowDialog() == DialogResult.OK && OzImageLoader.SaveOzj(_currentImage, dlg.FileName))
         {
             _statusLabel.Text = $"Guardado: {Path.GetFileName(dlg.FileName)}";
@@ -464,17 +400,8 @@ public partial class MainForm : Form
 
     private void SaveAsOzt()
     {
-        if (_currentImage == null)
-        {
-            MessageBox.Show("No hay imagen cargada.", "HUD Editor", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-        using var dlg = new SaveFileDialog
-        {
-            Filter = "OZT (*.ozt)|*.ozt|Todos (*.*)|*.*",
-            FileName = _currentImagePath != null ? Path.GetFileNameWithoutExtension(_currentImagePath) + ".ozt" : "image.ozt",
-            Title = "Guardar como OZT"
-        };
+        if (_currentImage == null) return;
+        using var dlg = new SaveFileDialog { Filter = "OZT (*.ozt)|*.ozt", FileName = _currentImagePath != null ? Path.GetFileNameWithoutExtension(_currentImagePath) + ".ozt" : "image.ozt" };
         if (dlg.ShowDialog() == DialogResult.OK && OzImageLoader.SaveOzt(_currentImage, dlg.FileName))
         {
             _statusLabel.Text = $"Guardado: {Path.GetFileName(dlg.FileName)}";
@@ -485,38 +412,28 @@ public partial class MainForm : Form
 
     private void MainForm_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.KeyCode != Keys.Delete) return;
-        if (_tabControl.SelectedIndex != 0) return;
-        var el = _hudEditor.SelectedElement;
-        if (el == null || _propertiesPanel.Document == null) return;
-        var idx = _propertiesPanel.Document.Elements.IndexOf(el);
-        if (idx < 0) return;
-        _propertiesPanel.Document.Elements.RemoveAt(idx);
-        _hudEditor.SelectedElement = _propertiesPanel.Document.Elements.Count > 0 ? _propertiesPanel.Document.Elements[Math.Min(idx, _propertiesPanel.Document.Elements.Count - 1)] : null;
-        _propertiesPanel.SelectedElement = _hudEditor.SelectedElement;
-        _propertiesPanel.RefreshElementList();
-        _hudEditor.Invalidate();
-        e.Handled = true;
+        if (e.KeyCode == Keys.Delete && _tabControl.SelectedIndex == 0 && _hudEditor.SelectedElement != null)
+        {
+            _sharedDoc.Elements.Remove(_hudEditor.SelectedElement);
+            _hudEditor.SelectedElement = null;
+            _propertiesPanel.SelectedElement = null;
+            _propertiesPanel.RefreshElementList();
+            _hudEditor.Invalidate();
+            e.Handled = true;
+        }
     }
 
     private void MainForm_DragEnter(object? sender, DragEventArgs e)
     {
-        if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0)
-            e.Effect = DragDropEffects.Copy;
+        if (e.Data?.GetData(DataFormats.FileDrop) is string[] files && files.Length > 0) e.Effect = DragDropEffects.Copy;
     }
 
     private void MainForm_DragDrop(object? sender, DragEventArgs e)
     {
         if (e.Data?.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
         var path = files[0];
-        if (Directory.Exists(path))
-        {
-            LoadFolder(path);
-            _hudEditor.BaseFolder = path;
-            _tabControl.SelectedIndex = 0;  // Editor HUD
-        }
-        else if (File.Exists(path))
-            LoadImage(path);
+        if (Directory.Exists(path)) LoadFolder(path, true);
+        else if (File.Exists(path)) LoadImage(path);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
