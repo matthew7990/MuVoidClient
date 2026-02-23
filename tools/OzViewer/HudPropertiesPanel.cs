@@ -9,6 +9,7 @@ public class HudPropertiesPanel : UserControl
     private bool _updatingFromElement;
 
     public HudDocument? Document { get; set; }
+    public string CurrentCategory { get; set; } = "HUD";
     public event Action? ElementChanged;
     public HudElement? SelectedElement
     {
@@ -45,8 +46,12 @@ public class HudPropertiesPanel : UserControl
         _listElements.SelectedIndexChanged += (_, _) =>
         {
             if (_updatingFromElement) return;
-            if (Document != null && _listElements.SelectedIndex >= 0 && _listElements.SelectedIndex < Document.Elements.Count)
-                ElementSelected?.Invoke(Document.Elements[_listElements.SelectedIndex]);
+            if (Document != null && _listElements.SelectedIndex >= 0)
+            {
+                var filtered = Document.Elements.Where(e => e.Category == CurrentCategory).ToList();
+                if (_listElements.SelectedIndex < filtered.Count)
+                    ElementSelected?.Invoke(filtered[_listElements.SelectedIndex]);
+            }
         };
         Controls.Add(_listElements);
 
@@ -130,7 +135,7 @@ public class HudPropertiesPanel : UserControl
     {
         _listElements?.Items.Clear();
         if (Document == null) return;
-        foreach (var el in Document.Elements)
+        foreach (var el in Document.Elements.Where(e => e.Category == CurrentCategory))
         {
             var name = string.IsNullOrWhiteSpace(el.Label) ? Path.GetFileName(el.FileName) : el.Label;
             _listElements!.Items.Add($"{name} ({el.X:F0},{el.Y:F0})");
@@ -160,7 +165,8 @@ public class HudPropertiesPanel : UserControl
 
                 if (Document != null && _listElements != null)
                 {
-                    var idx = Document.Elements.IndexOf(_element);
+                    var filtered = Document.Elements.Where(e => e.Category == CurrentCategory).ToList();
+                    var idx = filtered.IndexOf(_element);
                     if (idx >= 0 && _listElements.SelectedIndex != idx)
                         _listElements.SelectedIndex = idx;
                 }

@@ -25,12 +25,12 @@ Set-Location $repoRoot
 
 # Rutas donde puede estar el cliente compilado (prioridad)
 $possibleOutDirs = @(
+    "Source/out/build/vs-x86/Release",
+    "Source/out/build/vs-x86/src/Release",
     "MuMain/out/build/vs-x86/src/Release",
     "MuMain/out/src/release",
     "MuMain/out/src/Release",
-    "MuMain/build/RelWithDebInfo",
-    "MuMain/build/Release",
-    "MuMain/out/Release"
+    "MuMain/build/RelWithDebInfo"
 )
 $outDir = $null
 foreach ($p in $possibleOutDirs) {
@@ -46,8 +46,8 @@ if (-not $outDir) {
         $outDir = $mainExe.DirectoryName -replace [regex]::Escape($repoRoot), "" -replace "^\\", "" -replace "\\", "/"
     }
 }
-$versionFile = "MuMain/VERSION"
-$changelogFile = "MuMain/CLIENT_CHANGELOG.md"
+$versionFile = "CLIENT_VERSION"
+$changelogFile = "CLIENT_CHANGELOG.md"
 
 Write-Host "`n=== MuVoid - Publicar Cliente (local) ===" -ForegroundColor Cyan
 Write-Host ""

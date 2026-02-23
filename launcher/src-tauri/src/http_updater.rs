@@ -172,37 +172,8 @@ fn client_dir() -> PathBuf {
 }
 
 /// Busca el directorio donde hay archivos listos (version.json) para usar como FUENTE de actualización.
-/// La carpeta de instalación (client_dir) NUNCA es fuente: es el destino. Usarla causaría errores
-/// si la instalación está incompleta (ej. falta object42/object28.bmd).
-/// Orden: config explícita > MuVoidClient-Release (dev).
+/// DESACTIVADO: Ahora el launcher solo se alimenta de GitHub.
 fn find_client_source_dir() -> Option<PathBuf> {
-    let config = load_config();
-    if let Some(ref src) = config.client_source {
-        let p = PathBuf::from(src);
-        if p.join("version.json").exists() {
-            return Some(p);
-        }
-    }
-
-    // Dev: compile-client.bat copia a ../MuVoidClient-Release/MuVoidClient
-    let release_sibling = exe_dir().parent().map(|p| p.join("MuVoidClient-Release").join("MuVoidClient"));
-    if let Some(ref p) = release_sibling {
-        if p.join("version.json").exists() {
-            return Some(p.clone());
-        }
-    }
-
-    // Dev: exe en launcher/src-tauri/target/release, Release está en repo hermano
-    let release_from_target = exe_dir()
-        .ancestors()
-        .nth(5)
-        .map(|p| p.join("MuVoidClient-Release").join("MuVoidClient"));
-    if let Some(ref p) = release_from_target {
-        if p.join("version.json").exists() {
-            return Some(p.clone());
-        }
-    }
-
     None
 }
 
@@ -354,20 +325,16 @@ pub fn set_client_source_path(path: String) -> Result<(), String> {
 /// Origen: local (desarrollo) > instalado > GitHub (rama client).
 #[tauri::command]
 pub fn get_client_info() -> Result<ClientInfo, String> {
-    // 1. Local (desarrollo): directorio compilado
-    if let Some(source) = find_client_source_dir() {
-        let data = fs::read_to_string(source.join("version.json"))
-            .map_err(|e| format!("Error leyendo version.json: {}", e))?;
-        let data = strip_bom(&data);
-        let manifest: VersionManifest =
-            serde_json::from_str(data).map_err(|e| format!("version.json inválido: {}", e))?;
+    // 1. GitHub (rama client): SIEMPRE preguntar a GitHub primero para tener metadata fresca
+    let url = format!("{}/version.json", client_base_url());
+    if let Ok(manifest) = fetch_json::<VersionManifest>(&url) {
         return Ok(ClientInfo {
             version: manifest.version,
             changelog: manifest.changelog,
         });
     }
 
-    // 2. Instalado: carpeta de instalación
+    // 2. Fallback: instalado (carpeta de instalación) - solo si no hay internet
     let installed = client_dir().join("version.json");
     if installed.exists() {
         let data = fs::read_to_string(&installed)
@@ -381,13 +348,7 @@ pub fn get_client_info() -> Result<ClientInfo, String> {
         });
     }
 
-    // 3. GitHub (rama client): para usuarios que descargan el launcher sin compilar
-    let url = format!("{}/version.json", client_base_url());
-    let manifest: VersionManifest = fetch_json(&url)?;
-    Ok(ClientInfo {
-        version: manifest.version,
-        changelog: manifest.changelog,
-    })
+    Err("No se pudo obtener información del cliente (GitHub no responde y no hay instalación local)".to_string())
 }
 
 /// TCP-conecta al servidor del juego para saber si está online.
@@ -502,6 +463,20 @@ pub fn open_url(url: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Compara dos versiones (x.y.z) y devuelve true si remote es mayor que current.
+fn is_newer_version(current: &str, remote: &str) -> bool {
+    let current_parts: Vec<u32> = current.split('.').filter_map(|s| s.parse().ok()).collect();
+    let remote_parts: Vec<u32> = remote.split('.').filter_map(|s| s.parse().ok()).collect();
+    
+    for i in 0..std::cmp::max(current_parts.len(), remote_parts.len()) {
+        let v_curr = *current_parts.get(i).unwrap_or(&0);
+        let v_rem = *remote_parts.get(i).unwrap_or(&0);
+        if v_rem > v_curr { return true; }
+        if v_rem < v_curr { return false; }
+    }
+    false
+}
+
 /// Verifica si existe una nueva versión del launcher en GitHub.
 #[tauri::command]
 pub fn check_launcher_update() -> Result<bool, String> {
@@ -509,8 +484,8 @@ pub fn check_launcher_update() -> Result<bool, String> {
     log(&format!("Checking for launcher update... Current v{}", current));
     let url = format!("{}/launcher_version.json", launcher_base_url());
     let manifest: VersionManifest = fetch_json(&url)?;
-    let has_update = manifest.version != current;
-    log(&format!("Update check: New version v{}? {}", manifest.version, has_update));
+    let has_update = is_newer_version(current, &manifest.version);
+    log(&format!("Update check: Remote v{}? New? {}", manifest.version, has_update));
     Ok(has_update)
 }
 
@@ -586,23 +561,11 @@ fn do_check_and_update_client(app: tauri::AppHandle) -> Result<(), String> {
     let manifest: VersionManifest;
     let from_github: bool;
 
-    if let Some(source) = find_client_source_dir() {
-        // Modo desarrollo: copiar desde directorio compilado local
-        from_github = false;
-        let data = fs::read_to_string(source.join("version.json"))
-            .map_err(|e| format!("Error leyendo version.json: {}", e))?;
-        let data = strip_bom(&data);
-        manifest = serde_json::from_str(data).map_err(|e| format!("version.json inválido: {}", e))?;
+    // Modo distribución: descargar desde GitHub (rama client)
+    let url = format!("{}/version.json", client_base_url());
+    manifest = fetch_json(&url)?;
 
-        apply_manifest_from_local(&app, &manifest, &source, &install_dir)?;
-    } else {
-        // Modo distribución: descargar desde GitHub (rama client)
-        from_github = true;
-        let url = format!("{}/version.json", client_base_url());
-        manifest = fetch_json(&url)?;
-
-        apply_manifest_from_github(&app, &manifest, &install_dir)?;
-    }
+    apply_manifest_from_github(&app, &manifest, &install_dir)?;
 
     // Escribir version.json instalado para trackear la versión de forma atómica
     save_installed_manifest(&install_dir, &manifest)?;
@@ -745,7 +708,7 @@ fn apply_manifest_from_github(
     let start_time = Instant::now();
     let failed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
-    let pool = rayon::ThreadPoolBuilder::new().num_threads(16).build().map_err(|e| e.to_string())?;
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(8).build().map_err(|e| e.to_string())?;
     let app_shared = Arc::new(app.clone());
     let base_shared = Arc::new(base);
     let install_dir_shared = Arc::new(install_dir.to_path_buf());

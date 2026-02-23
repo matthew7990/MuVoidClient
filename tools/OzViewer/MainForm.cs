@@ -82,17 +82,65 @@ public partial class MainForm : Form
         _tabControl.TabPages[1].Controls.Add(_filesSplit);  // Archivos en pestaña 1
 
         var editorSplit = new SplitContainer { Dock = DockStyle.Fill };
-        _hudEditor = new HudEditorPanel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(25, 25, 35) };
+        
+        // --- Nueva sub-pestañas para categorías ---
+        var subTabControl = new TabControl { Dock = DockStyle.Fill };
+        var categories = new[] { "HUD", "Inventario", "Personaje", "Amigos", "Carga" };
+        var panelsByTab = new Dictionary<TabPage, HudEditorPanel>();
+
+        foreach (var cat in categories)
+        {
+            var page = new TabPage(cat);
+            var panel = new HudEditorPanel 
+            { 
+                Dock = DockStyle.Fill, 
+                BackColor = Color.FromArgb(25, 25, 35),
+                CurrentCategory = cat
+            };
+            page.Controls.Add(panel);
+            subTabControl.TabPages.Add(page);
+            panelsByTab[page] = panel;
+        }
+
+        _hudEditor = panelsByTab[subTabControl.TabPages[0]]; // Default
+        subTabControl.SelectedIndexChanged += (_, _) =>
+        {
+            var oldDoc = _hudEditor.Document;
+            var oldFolder = _hudEditor.BaseFolder;
+            
+            _hudEditor = panelsByTab[subTabControl.SelectedTab!];
+            _hudEditor.Document = oldDoc;
+            _hudEditor.BaseFolder = oldFolder;
+            
+            _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
+            _propertiesPanel.SelectedElement = null;
+            _propertiesPanel.RefreshElementList();
+            _hudEditor.Invalidate();
+        };
+        // ------------------------------------------
+
         _propertiesPanel = new HudPropertiesPanel { Dock = DockStyle.Fill };
 
-        _hudEditor.Document = HudDocument.CreateDefault();
-        _hudEditor.SelectionChanged += () =>
-            _propertiesPanel.SelectedElement = _hudEditor.SelectedElement;
-        _hudEditor.DragMoved += (el) =>
-            _propertiesPanel.UpdatePositionOnly(el);
-        _hudEditor.HoveredElementChanged += (el) =>
-            _editorStatusLabel.Text = el != null ? $"Sobre: {el.ResolvePath} ({el.X:F0},{el.Y:F0})" : "";
-        _propertiesPanel.Document = _hudEditor.Document;
+        // Documento compartido inicial
+        var sharedDoc = HudDocument.CreateDefault();
+
+        // Configuración inicial compartida
+        foreach (var pnl in panelsByTab.Values)
+        {
+            pnl.Document = sharedDoc;
+            pnl.SelectionChanged += () => {
+                if (_hudEditor == pnl) _propertiesPanel.SelectedElement = pnl.SelectedElement;
+            };
+            pnl.DragMoved += (el) => {
+                if (_hudEditor == pnl) _propertiesPanel.UpdatePositionOnly(el);
+            };
+            pnl.HoveredElementChanged += (el) => {
+                if (_hudEditor == pnl) _editorStatusLabel.Text = el != null ? $"Sobre: {el.ResolvePath} ({el.X:F0},{el.Y:F0})" : "";
+            };
+        }
+
+        _propertiesPanel.Document = sharedDoc;
+        _propertiesPanel.CurrentCategory = _hudEditor.CurrentCategory;
         _propertiesPanel.ElementSelected += (el) =>
         {
             _hudEditor.SelectedElement = el;
@@ -103,7 +151,7 @@ public partial class MainForm : Form
             _hudEditor.Invalidate();
         };
 
-        editorSplit.Panel1.Controls.Add(_hudEditor);
+        editorSplit.Panel1.Controls.Add(subTabControl);
         editorSplit.Panel2.Controls.Add(_propertiesPanel);
 
         _tabControl.TabPages[0].Controls.Add(editorSplit);  // Editor HUD en pestaña 0
@@ -226,10 +274,9 @@ public partial class MainForm : Form
         {
             try
             {
-                _hudEditor.Document = HudDocument.Load(layoutFile);
-                _propertiesPanel.Document = _hudEditor.Document;
+                var doc = HudDocument.Load(layoutFile);
+                UpdateAllTabDocuments(doc);
                 _layoutPath = layoutFile;
-                _propertiesPanel.RefreshElementList();
                 _statusLabel.Text += " | Layout cargado";
             }
             catch { /* ignorar si falla */ }
@@ -252,11 +299,9 @@ public partial class MainForm : Form
         {
             try
             {
-                _hudEditor.Document = HudDocument.Load(dlg.FileName);
-                _propertiesPanel.Document = _hudEditor.Document;
+                var doc = HudDocument.Load(dlg.FileName);
+                UpdateAllTabDocuments(doc);
                 _layoutPath = dlg.FileName;
-                _propertiesPanel.RefreshElementList();
-                _hudEditor.Invalidate();
                 _statusLabel.Text = $"Layout cargado: {Path.GetFileName(dlg.FileName)}";
             }
             catch (Exception ex)
@@ -293,12 +338,31 @@ public partial class MainForm : Form
 
     private void ResetLayout()
     {
-        _hudEditor.Document = HudDocument.CreateDefault();
-        _propertiesPanel.Document = _hudEditor.Document;
-        _propertiesPanel.SelectedElement = null;
+        UpdateAllTabDocuments(HudDocument.CreateDefault());
+        _statusLabel.Text = "Layout restablecido";
+    }
+
+    private void UpdateAllTabDocuments(HudDocument doc)
+    {
+        _hudEditor.Document = doc;
+        _propertiesPanel.Document = doc;
+        
+        // El subTabControl es el Control 0 del Panel 1 del editorSplit
+        // Buscamos el subTabControl para actualizar todos sus paneles
+        if (_tabControl.TabPages[0].Controls[0] is SplitContainer es && es.Panel1.Controls[0] is TabControl stc)
+        {
+            foreach (TabPage page in stc.TabPages)
+            {
+                if (page.Controls[0] is HudEditorPanel pnl)
+                {
+                    pnl.Document = doc;
+                    pnl.Invalidate();
+                }
+            }
+        }
+
         _propertiesPanel.RefreshElementList();
         _hudEditor.Invalidate();
-        _statusLabel.Text = "Layout restablecido";
     }
 
     private void ExportCppHeader()

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OzViewer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a3ce85b41e30b2ce34002739fdcd9c945f461f02")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f7ea4fcaa5a9642940881601b6a4c710cf45af33")]
 [assembly: System.Reflection.AssemblyProductAttribute("OzViewer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OzViewer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

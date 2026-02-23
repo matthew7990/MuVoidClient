@@ -29,6 +29,8 @@ public class HudEditorPanel : Panel
         set { _document = value; _selected = null; Invalidate(); }
     }
 
+    public string CurrentCategory { get; set; } = "HUD";
+
     public string? BaseFolder
     {
         get => _baseFolder;
@@ -68,7 +70,7 @@ public class HudEditorPanel : Panel
 
     private HudElement? HitTest(float gx, float gy)
     {
-        foreach (var el in _document.Elements.Where(e => e.Visible).OrderByDescending(e => e.ZOrder))
+        foreach (var el in _document.Elements.Where(e => e.Visible && e.Category == CurrentCategory).OrderByDescending(e => e.ZOrder))
         {
             if (el.Contains(gx, gy))
                 return el;
@@ -95,7 +97,7 @@ public class HudEditorPanel : Panel
         e.Graphics.TranslateTransform(offX, offY);
         e.Graphics.ScaleTransform(scale, scale);
 
-        foreach (var el in _document.Elements.Where(e => e.Visible).OrderBy(e => e.ZOrder))
+        foreach (var el in _document.Elements.Where(e => e.Visible && e.Category == CurrentCategory).OrderBy(e => e.ZOrder))
         {
             var path = HudDocument.ResolveImagePath(_baseFolder, el);
             if (!File.Exists(path)) continue;

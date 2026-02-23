@@ -1,13 +1,17 @@
 {
   "version": 2,
-  "dgSpecHash": "AHA1lSfRik4=",
+  "dgSpecHash": "F4XQBe9NS80=",
   "success": true,
   "projectFilePath": "C:\\Users\\matia\\OneDrive\\Documentos\\GitHub\\MuVoidClient\\tools\\OzViewer\\OzViewer.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\matia\\AppData\\Local\\Temp\\cursor-sandbox-cache\\8fcec156caeac4ee94c1714f5fbc3de6\\nuget\\microsoft.netcore.app.ref\\8.0.24\\microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
-    "C:\\Users\\matia\\AppData\\Local\\Temp\\cursor-sandbox-cache\\8fcec156caeac4ee94c1714f5fbc3de6\\nuget\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
-    "C:\\Users\\matia\\AppData\\Local\\Temp\\cursor-sandbox-cache\\8fcec156caeac4ee94c1714f5fbc3de6\\nuget\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512",
-    "C:\\Users\\matia\\AppData\\Local\\Temp\\cursor-sandbox-cache\\8fcec156caeac4ee94c1714f5fbc3de6\\nuget\\microsoft.netcore.app.host.win-x64\\8.0.24\\microsoft.netcore.app.host.win-x64.8.0.24.nupkg.sha512"
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.24\\microsoft.net.illink.tasks.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.24\\microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.24\\microsoft.netcore.app.runtime.win-x64.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.24\\microsoft.windowsdesktop.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.24\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.24\\microsoft.aspnetcore.app.ref.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.24\\microsoft.aspnetcore.app.runtime.win-x64.8.0.24.nupkg.sha512",
+    "C:\\Users\\matia\\.nuget\\packages\\microsoft.netcore.app.host.win-x64\\8.0.24\\microsoft.netcore.app.host.win-x64.8.0.24.nupkg.sha512"
   ],
   "logs": []
 }
