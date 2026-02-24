@@ -1,0 +1,2 @@
+C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\publish\OzViewer.pdb
+C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\publish\OzViewer.exe

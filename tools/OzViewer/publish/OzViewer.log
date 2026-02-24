@@ -177,3 +177,33 @@
 [2026-02-23 14:10:57.552] Shown OK
 [2026-02-23 14:10:57.553] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<>c__DisplayClass5_0.<InitializeComponent>g__ApplyLayout|19() in C:\Users\matia\OneDrive\Documentos\GitHub\MuVoidClient\tools\OzViewer\MainForm.cs:line 182
 [2026-02-23 14:11:19.356] Fin Main (normal)
+[2026-02-23 19:11:37.091] Inicio Main
+[2026-02-23 19:11:37.122] ApplicationConfiguration.Initialize
+[2026-02-23 19:11:37.135] Creando MainForm
+[2026-02-23 19:11:37.148] MainForm ctor inicio
+[2026-02-23 19:11:37.153] InitializeComponent inicio
+[2026-02-23 19:11:37.217] ResumeLayout
+[2026-02-23 19:11:37.217] MainForm ctor fin
+[2026-02-23 19:11:37.220] Application.Run
+[2026-02-23 19:11:37.332] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<>c__DisplayClass5_0.<InitializeComponent>g__ApplyLayout|19() in C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\MainForm.cs:line 182
+[2026-02-23 19:11:37.352] Shown OK
+[2026-02-23 19:11:37.353] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.<>c__DisplayClass5_0.<InitializeComponent>g__ApplyLayout|19() in C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\MainForm.cs:line 182
+[2026-02-23 19:17:57.004] Fin Main (normal)
+[2026-02-23 19:18:14.717] Inicio Main
+[2026-02-23 19:18:14.749] ApplicationConfiguration.Initialize
+[2026-02-23 19:18:14.773] Creando MainForm
+[2026-02-23 19:18:14.787] MainForm ctor inicio
+[2026-02-23 19:18:14.791] InitializeComponent inicio
+[2026-02-23 19:18:14.858] MainForm ctor fin
+[2026-02-23 19:18:14.860] Application.Run
+[2026-02-23 19:18:14.968] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.ApplyLayout() in C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\MainForm.cs:line 154
+[2026-02-23 19:23:49.327] Fin Main (normal)
+[2026-02-23 19:24:03.037] Inicio Main
+[2026-02-23 19:24:03.067] ApplicationConfiguration.Initialize
+[2026-02-23 19:24:03.081] Creando MainForm
+[2026-02-23 19:24:03.095] MainForm ctor inicio
+[2026-02-23 19:24:03.100] InitializeComponent inicio
+[2026-02-23 19:24:03.169] MainForm ctor fin
+[2026-02-23 19:24:03.171] Application.Run
+[2026-02-23 19:24:03.316] ERROR: Layout | ArgumentException: '120' cannot be greater than 42. |    at System.Math.ThrowMinMaxException[T](T min, T max) |    at OzViewer.MainForm.ApplyLayout() in C:\Users\mgome\Documents\Github\MuVoidClient\tools\OzViewer\MainForm.cs:line 154
+[2026-02-23 19:25:25.198] Fin Main (normal)

@@ -139,6 +139,8 @@ public class HudEditorPanel : Panel
         g.Clear(Color.FromArgb(20, 20, 28));
         g.InterpolationMode = InterpolationMode.NearestNeighbor;
         g.PixelOffsetMode   = PixelOffsetMode.Half;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
         if (string.IsNullOrEmpty(_baseFolder) || !Directory.Exists(_baseFolder))
         {
@@ -167,12 +169,28 @@ public class HudEditorPanel : Panel
                      .Where(e => e.Visible && e.Category == CurrentCategory)
                      .OrderBy(e => e.ZOrder))
         {
-            if (!TryGetImage(el, out var img) || img == null) continue;
-
-            g.DrawImage(img, el.X, el.Y, el.Width, el.Height);
-
-            if (el == _selected)      DrawSelectionOverlay(g, el, scale);
-            else if (el == _hovered)  DrawHoverOverlay(g, el, scale);
+            if (el.IsText)
+            {
+                var fontSize = Math.Max(1, el.FontSize);
+                var style = el.FontBold ? FontStyle.Bold : FontStyle.Regular;
+                using var font = new Font(el.FontName, fontSize, style);
+                var color = ColorTranslator.FromHtml(el.TextColorHex);
+                using var brush = new SolidBrush(color);
+                if (el.Width <= 0 || el.Height <= 0)
+                {
+                    var size = g.MeasureString(el.TextValue, font);
+                    el.Width = size.Width;
+                    el.Height = size.Height;
+                }
+                g.DrawString(el.TextValue, font, brush, el.X, el.Y);
+                if (el == _selected) DrawSelectionOverlay(g, el, scale);
+            }
+            else if (TryGetImage(el, out var img) && img != null)
+            {
+                g.DrawImage(img, el.X, el.Y, el.Width, el.Height);
+                if (el == _selected)      DrawSelectionOverlay(g, el, scale);
+                else if (el == _hovered)  DrawHoverOverlay(g, el, scale);
+            }
         }
 
         // Cuadrícula (encima de elementos, debajo de selección)
