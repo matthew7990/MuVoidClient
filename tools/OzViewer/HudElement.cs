@@ -13,6 +13,7 @@ public class HudElement
     public bool Visible { get; set; } = true;
     public string Category { get; set; } = "HUD";
 
+    [System.Text.Json.Serialization.JsonIgnore]
     public string ResolvePath => AltPath ?? FileName;
 
     public HudElement() { }

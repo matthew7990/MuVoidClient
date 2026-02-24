@@ -214,11 +214,35 @@ fn save_installed_manifest(install_dir: &Path, manifest: &VersionManifest) -> Re
     Err("No se pudo guardar version.json (archivo bloqueado)".to_string())
 }
 
-// ── Network helpers (usadas solo para el self-update del launcher) ────────────
+// ── Clientes HTTP ─────────────────────────────────────────────────────────────
 
+/// Cliente compartido para todas las descargas del cliente.
+/// Se crea una sola vez (lazy). El pool de conexiones reutiliza las TCP connections
+/// entre archivos, y HTTP/2 multiplexa varias peticiones sobre el mismo socket.
+static DOWNLOAD_CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
+
+fn shared_download_client() -> &'static reqwest::blocking::Client {
+    DOWNLOAD_CLIENT.get_or_init(|| {
+        reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(300))
+            .connect_timeout(Duration::from_secs(20))
+            .user_agent("MuVoidLauncher/1.0")
+            // Hasta 32 conexiones idle reutilizables por host CDN
+            .pool_max_idle_per_host(32)
+            // HTTP/2 via ALPN en TLS: multiplexa N peticiones sobre el mismo socket
+            .http2_adaptive_window(true)
+            // Keep-alive para que las conexiones no se cierren entre archivos
+            .tcp_keepalive(Duration::from_secs(30))
+            .build()
+            .expect("failed to build download client")
+    })
+}
+
+/// Cliente ligero para JSON/metadatos (self-update, manifests).
+/// No necesita el pool agresivo de descargas.
 fn get_http_client() -> reqwest::blocking::Client {
     reqwest::blocking::Client::builder()
-        .timeout(Duration::from_secs(120))  // 2 min para archivos grandes (Data/*.ozb, etc.)
+        .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(15))
         .user_agent("MuVoidLauncher/1.0")
         .build()
@@ -254,21 +278,31 @@ fn fetch_json<T: for<'de> Deserialize<'de>>(url: &str) -> Result<T, String> {
 }
 
 fn download_file(url: &str, dest: &Path) -> Result<(), String> {
+    use std::io::BufWriter;
+
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    
-    let client = get_http_client();
-    let resp = client.get(url).send().map_err(|e| {
-        log(&format!("Error descargando {}: {}", url, e));
-        e.to_string()
-    })?;
+
+    let resp = shared_download_client()
+        .get(url)
+        .send()
+        .map_err(|e| {
+            log(&format!("Error descargando {}: {}", url, e));
+            e.to_string()
+        })?;
 
     if !resp.status().is_success() {
         return Err(format!("HTTP {}: {}", resp.status(), url));
     }
-    let bytes = resp.bytes().map_err(|e| e.to_string())?;
-    fs::write(dest, &bytes).map_err(|e| e.to_string())
+
+    // Stream directo a disco: 256 KB de write-buffer evita cientos de syscalls
+    // y nunca carga el archivo completo en RAM (crítico para archivos grandes como *.ozb).
+    let file = fs::File::create(dest).map_err(|e| e.to_string())?;
+    let mut writer = BufWriter::with_capacity(256 * 1024, file);
+    let mut reader = resp;
+    std::io::copy(&mut reader, &mut writer).map_err(|e| e.to_string())?;
+    writer.flush().map_err(|e| e.to_string())
 }
 
 fn compute_sha256(path: &Path) -> Option<String> {
@@ -686,7 +720,7 @@ fn apply_manifest_from_github(
     let base = client_base_url();
     let sep = std::path::MAIN_SEPARATOR_STR;
 
-    let files_to_download: Vec<_> = manifest.files.par_iter().filter(|entry| {
+    let mut files_to_download: Vec<_> = manifest.files.par_iter().filter(|entry| {
         let dest_path = install_dir.join(entry.path.replace('/', sep));
         let exists = fs::metadata(&dest_path).is_ok();
         if !exists { return true; }
@@ -698,6 +732,11 @@ fn apply_manifest_from_github(
         purge_obsolete_files(manifest, install_dir)?;
         return Ok(());
     }
+
+    // Ordenar de mayor a menor: los archivos pesados arrancan primero y no son
+    // "stragglers" al final que bloquean la finalización del resto.
+    files_to_download.sort_unstable_by(|a, b| b.size.cmp(&a.size));
+
     log(&format!("Descargando {} archivos (de {} en el manifest)", files_to_download.len(), manifest.files.len()));
 
     let total_files = files_to_download.len();
@@ -708,7 +747,9 @@ fn apply_manifest_from_github(
     let start_time = Instant::now();
     let failed: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
 
-    let pool = rayon::ThreadPoolBuilder::new().num_threads(8).build().map_err(|e| e.to_string())?;
+    // 32 hilos: descarga I/O-bound → más concurrencia = más throughput.
+    // El cliente compartido (DOWNLOAD_CLIENT) reutiliza conexiones TCP entre hilos.
+    let pool = rayon::ThreadPoolBuilder::new().num_threads(32).build().map_err(|e| e.to_string())?;
     let app_shared = Arc::new(app.clone());
     let base_shared = Arc::new(base);
     let install_dir_shared = Arc::new(install_dir.to_path_buf());

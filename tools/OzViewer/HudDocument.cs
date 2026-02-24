@@ -137,13 +137,25 @@ public class HudDocument
         // Amigos
         doc.Add("Ventana Amigos",         "MenuS2_friend.OZJ",        390,   259, 250, 173, null, "Amigos");
 
-        // Pantalla de Carga (Dimensiones matching g_HudLayout 800x600)
-        doc.Add("Carga: Loading Part 1",  "LSBg01.OZJ",                 0,     0, 400, 512, null, "Carga");
-        doc.Add("Carga: Loading Part 2",  "LSBg02.OZJ",               400,     0, 400, 512, null, "Carga");
-        doc.Add("Carga: Loading Part 3",  "LSBg03.OZJ",                 0,   512, 400,  88, null, "Carga");
-        doc.Add("Carga: Loading Part 4",  "LSBg04.OZJ",               400,   512, 400,  88, null, "Carga");
+        // ── Pantalla de carga entre mapas (LoadingScene) ─────────────────────────
+        // Base: 800×600. Cuatro tiles que cubren toda la pantalla.
+        doc.Add("Carga: Loading Part 1",  "LSBg01.OZJ",   0,   0, 400, 512, null, "Carga");
+        doc.Add("Carga: Loading Part 2",  "LSBg02.OZJ", 400,   0, 400, 512, null, "Carga");
+        doc.Add("Carga: Loading Part 3",  "LSBg03.OZJ",   0, 512, 400,  88, null, "Carga");
+        doc.Add("Carga: Loading Part 4",  "LSBg04.OZJ", 400, 512, 400,  88, null, "Carga");
 
-
+        // ── Pantalla de inicio (WebzenScene) ──────────────────────────────────────
+        // Base superior/inferior: 800×600 (scaleX=W/800, scaleY=H/600).
+        // Strip superior – dos paneles de 400×69 que cubren todo el ancho
+        doc.Add("Inicio: Strip Top Left",  "New_lo_back_01.jpg",   0,   0, 400,  69, null, "Inicio");
+        doc.Add("Inicio: Strip Top Right", "New_lo_back_02.jpg", 400,   0, 400,  69, null, "Inicio");
+        // Strip inferior – dos paneles de 400×100
+        doc.Add("Inicio: Strip Bot Left",  "lo_back_s5_03.jpg",    0, 500, 400, 100, null, "Inicio");
+        doc.Add("Inicio: Strip Bot Right", "lo_back_s5_04.jpg",  400, 500, 400, 100, null, "Inicio");
+        // Logo / overlay
+        doc.Add("Inicio: Logo",            "lo_121518.tga",       544,  60, 256, 206, null, "Inicio");
+        // Patrón de fondo (se repite, GL_REPEAT)
+        doc.Add("Inicio: Pattern",         "lo_lo.jpg",             0,   0, 800, 600, null, "Inicio");
 
         for (int i = 0; i < doc.Elements.Count; i++)
             doc.Elements[i].ZOrder = i;
@@ -165,6 +177,9 @@ public class HudDocument
                 el.Category = "Personaje";
             else if (lower.Contains("amigo") || lower.Contains("friend"))
                 el.Category = "Amigos";
+            else if (lower.StartsWith("inicio:") || lower.Contains("webzen") ||
+                     lower.Contains("lo_back") || lower.Contains("new_lo"))
+                el.Category = "Inicio";
             else if (lower.Contains("loading") || lower.Contains("carga") || lower.Contains("lsbg"))
                 el.Category = "Carga";
             else
@@ -186,8 +201,10 @@ public class HudDocument
         {
             // Mezclamos si:
             // 1) Es una decoración (tiene :)
-            // 2) Pertenece a la categoría Carga (para que siempre se vea el fondo)
-            bool shouldMerge = defEl.Label.Contains(":") || defEl.Category == "Carga";
+            // 2) Pertenece a Carga o Inicio (fondos de pantalla, siempre necesarios)
+            bool shouldMerge = defEl.Label.Contains(":") ||
+                               defEl.Category == "Carga"   ||
+                               defEl.Category == "Inicio";
             
             if (shouldMerge && !doc.Elements.Any(e => e.Label == defEl.Label))
             {
